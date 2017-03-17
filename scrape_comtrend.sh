@@ -7,3 +7,9 @@ sed -E 's|</tr>|</tr>\
 grep 'SNR Margin' | \
 sed -E 's|.*:</td><td>([0-9]*)</td><td>([0-9]*)</td></tr>| SNR: \1  \2|g' | \
 cat 
+
+# Documentation:
+#
+# curl -N fix: - no buffering
+#    http://stackoverflow.com/questions/16703647/why-curl-return-and-error-23-failed-writing-body
+# curl -s - silent, no progress output
