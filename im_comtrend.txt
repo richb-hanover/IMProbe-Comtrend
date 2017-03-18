@@ -1,0 +1,57 @@
+<!--
+Command-line Return (com.blueberryhillsoftware.scrape_comtrend.txt)
+Copyright (c) Blueberry Hill Software, LLC. All rights reserved.
+Connect to a Comtrend DSL modem and scrape the SNR values
+Tested on Comtrend AR-5381u
+-->
+
+<header>
+  type  =  "cmd-line"
+  package  =  "com.blueberryhillsoftware"
+  probe_name  =  "test.comtrend"
+  human_name  =  "Comtrend SNR"
+  version  =  "1.0"
+  address_type  =  "IP"
+  display_name  =  "Miscellaneous/Test/Comtrend SNR"
+</header>
+<description>
+\GB\Comtrend SNR\p\
+
+Scrape SNR values from a Comtrend modem
+</description>
+
+<parameters>
+-- no human-editable parameters
+</parameters>
+
+<command-line>
+-- 'path' forces the InterMapper Settings:Tools directory if empty
+-- 'cmd' invokes the probe code, $numericParam passed "on the command line"
+-- 'args' are appended to cmd when invoking the probe
+-- 'input' is passed on stdin (avoids displaying info on cmd line, e.g., in top)
+   path=""
+   cmd="${PYTHON} im_comtrend.py"
+   args=''
+   -- input="${SearchString}"
+</command-line>
+
+<command-exit>
+-- These match the exit codes used by Nagios plugins
+  down:  ${EXIT_CODE}=4
+  critical:  ${EXIT_CODE}=3
+  alarm:  ${EXIT_CODE}=2
+  warn:  ${EXIT_CODE}=1
+  okay:  ${EXIT_CODE}=0
+</command-exit>
+
+<command-display>
+\b5\ SNR Values:\p0\
+  Downstream: $ds
+    Upstream: $us
+</command-display>
+
+<tool:im_comtrend.py>
+
+# Insert your Python Code here...
+
+</tool>
