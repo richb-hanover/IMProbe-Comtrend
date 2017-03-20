@@ -37,5 +37,5 @@ us = float(int(p[3]))/10
 retstring = ""
 retcode=0                               # probe (system) exit code
 
-print "\{ $ds := '%s', $us := '%s' } %s" % (ds, us, retstring)
+print "\{ $ds := %.1f, $us := %.1f } %s" % (ds, us, retstring)
 sys.exit(retcode)
