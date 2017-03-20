@@ -28,14 +28,11 @@ lines = [elem for elem in lines if 'SNR' in elem ]
 line = lines[0]                     # get the first line with "SNR"
 regex = re.compile(r'\d+')
 p = regex.findall(line)             # isolate numbers ("0.1 dB 119 156" => ['0', '1', '119', '156'])
-# print p
-ds = float(int(p[2]))/10
-us = float(int(p[3]))/10
 
 # print "DS: %s, US: %s" % (p[2], p[3])
 
 retstring = ""
 retcode=0                               # probe (system) exit code
 
-print "\{ $ds := %.1f, $us := %.1f } %s" % (ds, us, retstring)
+print "\{ $ds := %s, $us := %s }" % (p[2], p[3])
 sys.exit(retcode)
