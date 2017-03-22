@@ -16,8 +16,20 @@ try:
 except getopt.GetoptError, err:
     searchString = "getopt error %d" % (err)
 
-request = urllib2.Request('http://192.168.1.1/statsadsl.html')
-base64string = base64.b64encode('%s:%s' % ('root', '12345'))
+address = args[0]
+# print "Address: %s" % (address)
+
+# # Read the stdin file which contains the search String
+f = sys.stdin # open stdin
+credentials = f.readline().strip()     # get the line & remove leading & trailing whitespace
+# print "credentials: %s" % (credentials)
+#
+userpw = credentials.split(" ")
+user = userpw[0]
+password = userpw[1]
+
+request = urllib2.Request('http://%s/statsadsl.html' % (address))
+base64string = base64.b64encode('%s:%s' % (user, password))
 request.add_header("Authorization", "Basic %s" % base64string)
 result = urllib2.urlopen(request)
 

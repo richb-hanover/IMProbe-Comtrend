@@ -1,7 +1,6 @@
 #!/usr/local/imdc/core/python/bin/imdc -OO
 # The line above is required to run as an IMDC plugin
 
-# Scrape the Comtrend modem to return its SNR values
 
 import os
 import sys
