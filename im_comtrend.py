@@ -11,6 +11,13 @@ import base64
 import re
 import socket
 
+def scanForValues(str, lines):
+    data = [elem for elem in lines if str in elem ]
+    line = data[0]                     # get the first line with "str"
+    regex = re.compile(r'\d+')
+    p = regex.findall(line)             # isolate numbers ("0.1 dB 119 156" => ['0', '1', '119', '156'])
+    return p[-2:]
+
 try:
     searchString = ""
     opts, args = getopt.getopt(sys.argv[1:], "")
@@ -47,15 +54,14 @@ except urllib2.URLError, e:
 content = result.read()
 lines = content.split('</tr>')      # split on new <tr> elements
 
-lines = [elem for elem in lines if 'SNR' in elem ]
-line = lines[0]                     # get the first line with "SNR"
-regex = re.compile(r'\d+')
-p = regex.findall(line)             # isolate numbers ("0.1 dB 119 156" => ['0', '1', '119', '156'])
-
-# print "DS: %s, US: %s" % (p[2], p[3])
+dSNR, uSNR = scanForValues("SNR", lines)
+dAtten, uAtten = scanForValues("Attenuation", lines)
+dPower, uPower = scanForValues("Output Power", lines)
 
 retstring = ""
 retcode=0                               # probe (system) exit code
 
-print "\{ $ds := %s, $us := %s }" % (p[2], p[3])
+print "\{ $dSNR := %s, $uSNR := %s, $dAtten := %s, $uAtten := %s, $dPower := %s, $uPower := %s }" \
+      % (dSNR, uSNR, dAtten, uAtten, dPower, uPower )
 sys.exit(retcode)
+
