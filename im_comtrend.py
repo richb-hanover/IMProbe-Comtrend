@@ -11,12 +11,32 @@ import base64
 import re
 import socket
 
-def scanForValues(str, lines):
-    data = [elem for elem in lines if str in elem ]
+'''
+scanForValues - retrieve down and upstream values from the named line
+'''
+def scanForValues(name, lines):
+    data = [elem for elem in lines if name in elem ]
     line = data[0]                     # get the first line with "str"
     regex = re.compile(r'\d+')
     p = regex.findall(line)             # isolate numbers ("0.1 dB 119 156" => ['0', '1', '119', '156'])
     return p[-2:]
+
+'''
+retrievePage() - get page from modem, break into lines at "</tr>"
+'''
+def retrievePage(adrs, page, user, password):
+    request = urllib2.Request('http://%s/%s' % (adrs,page))
+    base64string = base64.b64encode('%s:%s' % (user, password))
+    request.add_header("Authorization", "Basic %s" % base64string)
+    try:
+        result = urllib2.urlopen(request, timeout=3)
+    except urllib2.URLError, e:
+        # For Python 2.7
+        # raise MyException("There was an error: %r" % e)
+        print "\{ } No response"  # No response - timed out
+        sys.exit(4)  # return "Down" exit status
+    content = result.read()
+    return content.split('</tr>')  # split on new <tr> elements
 
 try:
     searchString = ""
@@ -40,19 +60,7 @@ else:
     user = userpw[0]
     password = userpw[1]
 
-request = urllib2.Request('http://%s/statsadsl.html' % address)
-base64string = base64.b64encode('%s:%s' % (user, password))
-request.add_header("Authorization", "Basic %s" % base64string)
-try:
-    result = urllib2.urlopen(request, timeout=3)
-except urllib2.URLError, e:
-    # For Python 2.7
-    # raise MyException("There was an error: %r" % e)
-    print "\{ } No response"        # No response - timed out
-    sys.exit(4)                     # return "Down" exit status
-
-content = result.read()
-lines = content.split('</tr>')      # split on new <tr> elements
+lines = retrievePage(address, "statsadsl.html", user, password)
 
 dSNR, uSNR = scanForValues("SNR", lines)
 dAtten, uAtten = scanForValues("Attenuation", lines)

@@ -1,0 +1,106 @@
+<html>
+   <head>
+      <meta http-equiv='Pragma' content='no-cache'>
+      <meta http-equiv="refresh" content="15">
+      <link rel="stylesheet" href='stylemain.css' type='text/css'>
+         <link rel="stylesheet" href='colors.css' type='text/css'>
+            <script language="javascript">
+<!-- hide
+var DslBondingEnabled='0';
+var currLineNum='0';
+function frmLoad() {
+   var errMsg = '&nbsp';
+   
+   if ( errMsg != '&nbsp' )
+      eval('location="statsadslerr.html"');
+}
+
+//<< [CTFN-SYS-019] Camille : Support Bits per Tone Graph, 2009/05/21
+//<<Y.Y.L, 2007/7/25, for drawing tone graph on web GUI
+function btnBitToneGraph() {
+//<< [CTFN-XDSL-003-1] Add slave DSL graph, 2012/03/26
+        var bonding='0';
+
+options = 'menubar=no,resizable=yes,scrollbars=yes,titlebar=yes,toolbar=no,width=1000,height=750';
+       if(bonding=='1'){
+ window.open('graphallbnd.html', 'BCM963xxDSLGraphTone', options);
+       	}
+	   	else{
+ window.open('graphall.html', 'BCM963xxDSLGraphTone', options);
+       	}
+//>> [CTFN-XDSL-003-1] End
+}
+//>>
+//>> [CTFN-SYS-019] End
+
+function btnBerTest() {
+   var options;
+
+   options = 'menubar=no,resizable=no,scrollbars=yes,titlebar=yes,toolbar=no,width=400,height=300';
+
+   window.open('berstart.tst?berState=1', 'BCM963xxBerTest', options);
+}
+
+function btnReset() {
+   var loc = 'statsadslreset.html';
+
+   var code = 'location="' + loc + '"';
+   eval(code);
+}
+
+function changeLineNum() {
+   var loc = 'statsadsl.cgi?';   
+   with ( document.forms[0] ) { 
+       loc += 'bondingLineNum=' + lineNum.value;   
+   }
+   var code = 'location="' + loc + '"';
+   eval(code);
+}
+
+function btnClose() {
+   window.close();
+}
+
+// done hiding -->
+      </script>
+   </head>
+   <body onLoad='frmLoad()'>
+      <blockquote>
+         <form>
+            <b>Statistics -- xDSL</b><br><br>
+<script language="javascript">
+            if ( DslBondingEnabled == 1 ) {
+               document.write("<br>");
+               document.write("Bonding Line Selection  <select size=\"1\" name=\"lineNum\" onChange='changeLineNum()'> \n");
+               if ( currLineNum == 0 ) {
+                   document.write("<option value=\"0\" selected=\"1\"> DSL1 \n");
+               } else {
+                   document.write("<option value=\"0\"> DSL1 \n");
+               }
+               if ( currLineNum == 1 ) {
+                   document.write("<option value=\"1\" selected=\"1\"> DSL2 \n");
+               } else {
+                   document.write("<option value=\"1\"> DSL2 \n");
+               }
+               document.write("</option> </select>\n");
+               document.write("<br><br>");
+            }
+</script>
+            <table border="1" cellpadding="0" cellspacing="0">
+               <tr>
+                  <td>               <tr><td colspan="2" class='hd'>Mode:</td><td>ADSL2+ </td><td colspan="2" rowspan="12">&nbsp</td></tr><tr><td colspan="2" class='hd'>Traffic Type:</td><td>ATM</td></tr><tr><td colspan="2" class='hd'>Status:</td><td>Up</td></tr><tr><td colspan="2" class='hd'>Link Power State:</td><td>L0&nbsp;</td></tr><tr><td colspan="3">&nbsp;</td></tr><tr><td class='hd'>&nbsp;</td><td class='hd'>Downstream</td><td class='hd'>Upstream</td></tr><tr><td class='hd'><nobreak>PhyR Status:</nobreak></td><td>Off</td><td>Off</td></tr><tr><td class='hd'><nobreak>Line Coding(Trellis):</nobreak></td><td>On</td><td>On</td></tr><tr><td class='hd'>SNR Margin (0.1 dB):</td><td>170</td><td>157</td></tr><tr><td class='hd'>Attenuation (0.1 dB):</td><td>360</td><td>193</td></tr><tr><td class='hd'>Output Power (0.1 dBm):</td><td>182</td><td>124</td></tr><tr><td class='hd'><nobreak>Attainable Rate (Kbps):</nobreak></td><td>14368</td><td>1246</td></tr><tr><td colspan="5">&nbsp;</td></tr>
+<tr><td class='hd'>&nbsp;</td><td class='hd'>Path 0</td><td class='hd'>&nbsp;</td><td class='hd'>Path 1</td><td class='hd'>&nbsp;</td></tr><tr><td class='hd'>&nbsp;</td><td class='hd'>Downstream</td><td class='hd'>Upstream</td><td class='hd'>Downstream</td><td class='hd'>Upstream</td></tr><tr><td class='hd'>Rate (Kbps):</td><td>8271</td><td>908</td><td>0</td><td>0</td></tr><tr><td colspan="5">&nbsp;</td></tr>
+<tr><td class='hd'><nobreak>MSGc (# of bytes in overhead channel message):</nobreak></td><td>61</td><td>11</td><td>0</td><td>0</td></tr><tr><td class='hd'><nobreak>B (# of bytes in Mux Data Frame):</nobreak></td><td>231</td><td>25</td><td>0</td><td>0</td></tr><tr><td class='hd'><nobreak>M (# of Mux Data Frames in FEC Data Frame):</nobreak></td><td>1</td><td>1</td><td>0</td><td>0</td></tr><tr><td class='hd'><nobreak>T (Mux Data Frames over sync bytes):</nobreak></td><td>1</td><td>4</td><td>0</td><td>0</td></tr><tr><td class='hd'><nobreak>R (# of check bytes in FEC Data Frame):</nobreak></td><td>0</td><td>0</td><td>0</td><td>0</td></tr><tr><td class='hd'><nobreak>S (ratio of FEC over PMD Data Frame length):</nobreak></td><td>0.9666</td><td>0.9811</td><td>0.0</td><td>0.0</td></tr><tr><td class='hd'><nobreak>L (# of bits in PMD Data Frame):</nobreak></td><td>1920</td><td>212</td><td>0</td><td>0</td></tr><tr><td class='hd'><nobreak>D (interleaver depth):</nobreak></td><td>1</td><td>1</td><td>0</td><td>0</td></tr><tr><td class='hd'><nobreak>Delay (msec):</nobreak></td><td>0</td><td>0</td><td>0.0</td><td>0.0</td></tr><tr><td class='hd'><nobreak>INP (DMT symbol):</nobreak></td><td>0.00</td><td>0.00</td><td>0.0</td><td>0.0</td></tr><tr><td colspan="5">&nbsp;</td></tr><tr><td class='hd'>Super Frames:</td><td>0</td><td>0</td><td>0</td><td>0</td></tr><tr><td class='hd'>Super Frame Errors:</td><td>12257</td><td>1330</td><td>0</td><td>0</td></tr><tr><td class='hd'>RS Words:</td><td>0</td><td>2667539</td><td>0</td><td>0</td></tr><tr><td class='hd'>RS Correctable Errors:</td><td>0</td><td>0</td><td>0</td><td>0</td></tr><tr><td class='hd'>RS Uncorrectable Errors:</td><td>0</td><td>0</td><td>0</td><td>0</td></tr><tr><td colspan="5">&nbsp;</td></tr><tr><td class='hd'>HEC Errors:</td><td>1222561</td><td>1093</td><td>0</td><td>0</td></tr><tr><td class='hd'>OCD Errors:</td><td>0</td><td>0</td><td>0</td><td>0</td></tr><tr><td class='hd'>LCD Errors:</td><td>0</td><td>0</td><td>0</td><td>0</td></tr><tr><td class='hd'>Total Cells:</td><td>115532000</td><td>12676230</td><td>0</td><td>0</td></tr><tr><td class='hd'>Data Cells:</td><td>8414545</td><td>540670</td><td>0</td><td>0</td></tr><tr><td class='hd'>Bit Errors:</td><td>0</td><td>321</td><td>0</td><td>0</td></tr><tr><td colspan="5">&nbsp;</td></tr><tr><td class='hd'>Total ES:</td><td>2085</td><td>123</td><td colspan="2" rowspan="3">&nbsp</td></tr><tr><td class='hd'>Total SES:</td><td>193</td><td>2</td></tr><tr><td class='hd'>Total UAS:</td><td>1244</td><td>1095</td></tr>&nbsp;</td>
+               </tr>
+            </table>
+            <br><br>
+            <input type='button' onClick='btnBerTest()' value='xDSL BER Test'>
+            <input type='button' onClick='btnReset()' value='Reset Statistics'>
+            <!-- //<< [CTFN-SYS-019] Camille: Support Bits per Tone Graph, 2009/05/21 -->
+            <!--Y.Y.L, 2007/7/25, for drawing tone graph on web GUI-->
+            <input type='button' onClick='btnBitToneGraph()' value='Draw Graph'>
+            <!--Y.Y.L, 2007/7/25, for drawing tone graph on web GUI-->
+         </form>
+      </blockquote>
+   </body>
+</html>
