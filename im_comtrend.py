@@ -10,6 +10,9 @@ import urllib2
 import base64
 import re
 import socket
+import time
+from datetime import datetime, timedelta, date
+
 
 '''
 retrievePage() - get page from modem, handle errors
@@ -44,13 +47,30 @@ def scanForTimes(page):
     lines = page.split('</td>')                                 # split on </td> elements
     data = [elem for elem in lines if '<td>' in elem]           # only keep lines with <td>
     result = []
-    for str in data:                                              # only keep tail (with d:h:m:s values)
-        s = str.replace(" days:", "d, ")
+    for str in data:
+        # format the string to d, h, m, s
+        s = str.replace('\n','')                                # trim off new lines
+        s = re.sub(r'.*<td>', '', s)                            # trim off junk
+        s = s.replace(" days:", "d, ")                          # format to d, h, m, s values
         s = s.replace(" hours:","h, ")
         s = s.replace(" mins:","m, ")
         s = s.replace(" secs","s")
-        result.append(re.sub(r'.*<td>', '', s.replace('\n','')))
-    return result[0:3]                                          # return first three entities
+        s = '%-19s' % s                                         # force into fixed width field
+        result.append(s)
+
+        # compute time of outage
+        regex = re.compile(r'\d+')
+        p = regex.findall(s)                            # isolate numbers ("1d, 2h, 3m, 4s" => ['1', '2', '3', '4'])
+        timeVals = ["0","0","0","0"]
+        timeVals.extend(p)                              # Prepend four zero values in case nothing's there
+        secs = int(timeVals[-4])*24+int(timeVals[-3])   # Days (4th from last) + Hours (third from last)
+        secs += secs * 60 + int(timeVals[-2])           # Add minutes (second from last)
+        secs += secs * 60 + int(timeVals[-1])           # and seconds (last)
+        # compute time of outage
+        outage = datetime.now() - timedelta(**{'seconds': secs})
+        since = "(Since %s)" % outage.strftime("%d %b %H:%M:%S")
+        result.append(since)
+    return result[0:6]                                          # return times & "since" values
 
 '''
 Main Routine - parse arguments, get data from modem, format the results
@@ -91,7 +111,7 @@ times = scanForTimes(page)                 # scan off the Uptime, DSL uptime, pp
 retstring = ""
 retcode=0                               # probe (system) exit code
 
-print "\{ $dSNR := %s, $uSNR := %s, $dAtten := %s, $uAtten := %s, $dPower := %s, $uPower := %s, $up := '%s', $dslUp := '%s', $pppUp := '%s' }" \
-      % (dSNR, uSNR, dAtten, uAtten, dPower, uPower, times[0], times[1], times[2] )
+print "\{ $dSNR := %s, $uSNR := %s, $dAtten := %s, $uAtten := %s, $dPower := %s, $uPower := %s, $mdmUp := '%s', $mdmS := '%s', $dslUp := '%s', $dslS := '%s', $pppUp := '%s', $pppS := '%s' }" \
+      % (dSNR, uSNR, dAtten, uAtten, dPower, uPower, times[0], times[1], times[2], times[3], times[4], times[5] )
 sys.exit(retcode)
 
