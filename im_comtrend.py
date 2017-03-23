@@ -63,9 +63,9 @@ def scanForTimes(page):
         p = regex.findall(s)                            # isolate numbers ("1d, 2h, 3m, 4s" => ['1', '2', '3', '4'])
         timeVals = ["0","0","0","0"]
         timeVals.extend(p)                              # Prepend four zero values in case nothing's there
-        secs = int(timeVals[-4])*24+int(timeVals[-3])   # Days (4th from last) + Hours (third from last)
-        secs += secs * 60 + int(timeVals[-2])           # Add minutes (second from last)
-        secs += secs * 60 + int(timeVals[-1])           # and seconds (last)
+        hrs = int(timeVals[-4])*24+int(timeVals[-3])    # Days (4th from last) + Hours (third from last)
+        mins = (hrs * 60) + int(timeVals[-2])           # Add minutes (second from last)
+        secs = (mins * 60) + int(timeVals[-1])          # and seconds (last)
         # compute time of outage
         outage = datetime.now() - timedelta(**{'seconds': secs})
         since = "(Since %s)" % outage.strftime("%d %b %H:%M:%S")
