@@ -1,5 +1,5 @@
 <!--
-Command-line Return (com.blueberryhillsoftware.scrape_comtrend.txt)
+Command-line Probe (com.blueberryhillsoftware.scrape_comtrend.txt)
 Copyright (c) Blueberry Hill Software, LLC. All rights reserved.
 Connect to a Comtrend DSL modem and scrape the SNR values
 Tested on Comtrend AR-5381u
@@ -23,7 +23,7 @@ Scrape SNR, Power, and Attenuation values from a Comtrend modem
 
 <parameters>
     User        =   "root"
-    Password    =   "12345"
+    Password    =   "12345"      # really!
 </parameters>
 
 <command-line>

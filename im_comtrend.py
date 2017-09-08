@@ -1,7 +1,20 @@
 #!/usr/local/imdc/core/python/bin/imdc -OO
 # The line above is required to run as an IMDC plugin
 
-# Scrape the Comtrend modem to return its SNR values
+# im_comtrend.py - Intermapper probe for Comtrend DSL modems
+# 
+# Scrape web interface of a Comtrend DSL modem to return its SNR values, 
+# and other important operational characteristics.
+# Tested with Comtrend AR-5381U
+#
+# See the full documentation at: github
+#
+# Demonstrates a detailed Command-line probe, using the IMDC Python interpreter,
+# as well as the formatting available for a Status Window.
+#
+# ---------------------------------------------
+# Copyright (c) 2017 - Rich Brown, Blueberry Hill Software, http://blueberryhillsoftware.com
+# MIT License - See the footer of the file for the full statement
 
 import os
 import sys
@@ -12,7 +25,6 @@ import re
 import socket
 import time
 from datetime import datetime, timedelta, date
-
 
 '''
 retrievePage() - get page from modem, handle errors
@@ -35,7 +47,7 @@ scanForValues - scan the lines and return down and upstream values from the name
 '''
 def scanForValues(name, lines):
     data = [elem for elem in lines if name in elem ]
-    line = data[0]                     # get the first line with "str"
+    line = data[0]                     # get the first line with "name"
     regex = re.compile(r'\d+')
     p = regex.findall(line)             # isolate numbers ("0.1 dB 119 156" => ['0', '1', '119', '156'])
     return p[-2:]
@@ -111,7 +123,28 @@ times = scanForTimes(page)                 # scan off the Uptime, DSL uptime, pp
 retstring = ""
 retcode=0                               # probe (system) exit code
 
+# Format the response for display in the Status Window 
 print "\{ $dSNR := %s, $uSNR := %s, $dAtten := %s, $uAtten := %s, $dPower := %s, $uPower := %s, $mdmUp := '%s', $mdmS := '%s', $dslUp := '%s', $dslS := '%s', $pppUp := '%s', $pppS := '%s' }" \
       % (dSNR, uSNR, dAtten, uAtten, dPower, uPower, times[0], times[1], times[2], times[3], times[4], times[5] )
 sys.exit(retcode)
 
+# ---------------------------
+# MIT License
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
