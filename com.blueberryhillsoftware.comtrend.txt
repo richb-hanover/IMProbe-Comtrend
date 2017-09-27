@@ -1,5 +1,5 @@
 <!--
-Command-line Probe (com.blueberryhillsoftware.scrape_comtrend.txt)
+Command-line Probe (com.blueberryhillsoftware.comtrend.txt)
 Copyright (c) Blueberry Hill Software, LLC. All rights reserved.
 Connect to a Comtrend DSL modem and scrape the SNR values
 Tested on Comtrend AR-5381u
@@ -8,17 +8,17 @@ Tested on Comtrend AR-5381u
 <header>
   type          =  "cmd-line"
   package       =  "com.blueberryhillsoftware"
-  probe_name    =  "test.comtrend"
-  human_name    =  "Comtrend Stats"
-  version       =  "1.0"
+  probe_name    =  "comtrend"
+  human_name    =  "Comtrend DSL Stats"
+  version       =  "1.1"
   address_type  =  "IP"
-  display_name  =  "Miscellaneous/Test/Comtrend Stats"
+  display_name  =  "Miscellaneous/Comtrend DSL Stats"
 </header>
 
 <description>
-\GB\Comtrend Stats\p\
+\GB\Comtrend DSL Stats\p\
 
-Scrape SNR, Power, and Attenuation values from a Comtrend modem
+Retrieve SNR, Power, and Attenuation values, plus uptimes from a Comtrend DSL modem.
 </description>
 
 <parameters>
@@ -57,11 +57,25 @@ PPPoE Uptime: ${eval:"$pppUp"} \3gi\${eval:"$pppS"}\p0m\
 
 </command-display>
 
+<!-- insert the contents of the im_comtrend.py file into the tool section below -->
 <tool:im_comtrend.py>
 #!/usr/local/imdc/core/python/bin/imdc -OO
 # The line above is required to run as an IMDC plugin
 
-# Scrape the Comtrend modem to return its SNR values
+# im_comtrend.py - Intermapper probe for Comtrend DSL modems
+#
+# Scrape web interface of a Comtrend DSL modem to return its SNR values,
+# and other important operational characteristics.
+# Tested with Comtrend AR-5381U
+#
+# See the full documentation at: https://github.com/richb-hanover/IMProbe-Comtrend
+#
+# Demonstrates a detailed Command-line probe, using the IMDC Python interpreter,
+# as well as the formatting available for a Status Window.
+#
+# ---------------------------------------------
+# Copyright (c) 2017 - Rich Brown, Blueberry Hill Software, http://blueberryhillsoftware.com
+# MIT License - See LICENSE file for the full statement
 
 import os
 import sys
@@ -72,7 +86,6 @@ import re
 import socket
 import time
 from datetime import datetime, timedelta, date
-
 
 '''
 retrievePage() - get page from modem, handle errors
@@ -95,7 +108,7 @@ scanForValues - scan the lines and return down and upstream values from the name
 '''
 def scanForValues(name, lines):
     data = [elem for elem in lines if name in elem ]
-    line = data[0]                     # get the first line with "str"
+    line = data[0]                     # get the first line with "name"
     regex = re.compile(r'\d+')
     p = regex.findall(line)             # isolate numbers ("0.1 dB 119 156" => ['0', '1', '119', '156'])
     return p[-2:]
@@ -171,6 +184,7 @@ times = scanForTimes(page)                 # scan off the Uptime, DSL uptime, pp
 retstring = ""
 retcode=0                               # probe (system) exit code
 
+# Format the response for display in the Status Window
 print "\{ $dSNR := %s, $uSNR := %s, $dAtten := %s, $uAtten := %s, $dPower := %s, $uPower := %s, $mdmUp := '%s', $mdmS := '%s', $dslUp := '%s', $dslS := '%s', $pppUp := '%s', $pppS := '%s' }" \
       % (dSNR, uSNR, dAtten, uAtten, dPower, uPower, times[0], times[1], times[2], times[3], times[4], times[5] )
 sys.exit(retcode)
