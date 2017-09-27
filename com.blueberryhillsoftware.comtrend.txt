@@ -1,6 +1,6 @@
 <!--
 Command-line Probe (com.blueberryhillsoftware.comtrend.txt)
-Copyright (c) Blueberry Hill Software, LLC. All rights reserved.
+Copyright (c) Blueberry Hill Software, LLC.
 Connect to a Comtrend DSL modem and scrape the SNR values
 Tested on Comtrend AR-5381u
 -->
@@ -19,6 +19,10 @@ Tested on Comtrend AR-5381u
 \GB\Comtrend DSL Stats\p\
 
 Retrieve SNR, Power, and Attenuation values, plus uptimes from a Comtrend DSL modem.
+
+Full source available: \u4\https://github.com/richb-hanover/IMProbe-Comtrend\p0\
+
+Created by Rich Brown, \u4=http://blueberryhillsoftware.com\Blueberry Hill Software LLC \p0\, an Intermapper consultant
 </description>
 
 <parameters>

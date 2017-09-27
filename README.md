@@ -10,19 +10,25 @@ This helped my ISP figure out what was happening.
 
 This probe demonstrates a detailed InterMapper command-line probe, using the IMDC Python interpreter.
 
-This probe connects to, and scrapes the web interface of a Comtrend DSL modem to retrieve its SNR values and other important operational characteristics. 
+This probe connects to a Comtrend DSL modem's web interface, and retrieves its SNR values and uptime values. 
 This has been tested with a Comtrend AR-5381U modem.
 Here's the Status Window:
 
 ![Probe for Comtrend Modem](https://github.com/richb-hanover/IMProbe-Comtrend/blob/master/ComtrendModem.png?raw=true)
 
-To use the probe, use **File->Import Probe** and select the probe file `com.blueberryhillsoftware.comtrend.txt`
+**To use the probe** 
 
-To edit the probe, make changes to the `im_comtrend.py` file then copy/paste its contents into the `<tool> ... </tool>` section of the `com.blueberryhillsoftware.comtrend.txt` probe file and re-import it.
+1. Use **File->Import Probe** and select the probe file `com.blueberryhillsoftware.comtrend.txt`
+2. Select the probe from **Miscellaneous/Comtrend DSL Stats**
+
+**To edit the probe**
+
+1. Edit the probe file `com.blueberryhillsoftware.comtrend.txt` to change the appearance of the Status Window, or...
+2. Edit and test the Python program in the `im_comtrend.py` file then copy/paste its contents into the `<tool> ... </tool>` section of the `com.blueberryhillsoftware.comtrend.txt` probe file and re-import it.
 
 See the full documentation at: [https://github.com/richb-hanover/IMProbe-Comtrend](https://github.com/richb-hanover/IMProbe-Comtrend)
 
 --------
-Copyright (c) 2017 - Rich Brown, Blueberry Hill Software, [http://blueberryhillsoftware.com](http://blueberryhillsoftware.com)
+Copyright (c) 2017 - Rich Brown, [Blueberry Hill Software](http://blueberryhillsoftware.com), an Intermapper consultancy
 
 MIT License - See the LICENSE file for the full statement
