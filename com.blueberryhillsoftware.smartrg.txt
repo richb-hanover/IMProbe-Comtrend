@@ -1,0 +1,198 @@
+<!--
+Command-line Probe (com.blueberryhillsoftware.comtrend.txt)
+Copyright (c) Blueberry Hill Software, LLC.
+Connect to a Comtrend DSL modem and scrape the SNR values
+Tested on Comtrend AR-5381u
+-->
+
+<header>
+  type          =  "cmd-line"
+  package       =  "com.blueberryhillsoftware"
+  probe_name    =  "smartrg"
+  human_name    =  "SmartRG DSL Stats"
+  version       =  "1.1"
+  address_type  =  "IP"
+  display_name  =  "Miscellaneous/SmartRG DSL Stats"
+</header>
+
+<description>
+\GB\Smart DSL Stats\p\
+
+Retrieve SNR, Power, and Attenuation values, plus uptimes from a Comtrend DSL modem.
+
+Full source available: \u4\https://github.com/richb-hanover/IMProbe-Comtrend\p0\
+
+Created by Rich Brown, \u4=http://blueberryhillsoftware.com\Blueberry Hill Software LLC \p0\, an Intermapper consultant
+</description>
+
+<parameters>
+    User        =   "admin  "
+    Password    =   "admin"      # really!
+</parameters>
+
+<command-line>
+-- 'path' forces the InterMapper Settings:Tools directory if empty
+-- 'cmd' invokes the probe code, $numericParam passed "on the command line"
+-- 'args' are appended to cmd when invoking the probe
+-- 'input' is passed on stdin (avoids displaying info on cmd line, e.g., in top)
+   path     =   ""
+   cmd      =   "${PYTHON} im_comtrend.py"
+   arg      =   "${address}"
+   input    =   "${User} ${Password}"
+</command-line>
+
+<command-exit>
+-- These match the exit codes used by Nagios plugins
+  down:  ${EXIT_CODE}=4
+  critical:  ${EXIT_CODE}=3
+  alarm:  ${EXIT_CODE}=2
+  warn:  ${EXIT_CODE}=1
+  okay:  ${EXIT_CODE}=0
+</command-exit>
+
+<command-display>
+\b5\ Comtrend      SNR    Power   Attenuation\p0\
+  Downstream:  ${chartable: ##.# : $dSNR/10}   ${chartable: ##.# : $dPower/10}    ${chartable: ##.# : $dAtten/10}
+    Upstream:  ${chartable: ##.# : $uSNR/10}   ${chartable: ##.# : $uPower/10}    ${chartable: ##.# : $uAtten/10}
+
+Modem Uptime: ${eval:"$mdmUp"} \3gi\${eval:"$mdmS"}\p0m\
+  DSL Uptime: ${eval:"$dslUp"} \3gi\${eval:"$dslS"}\p0m\
+PPPoE Uptime: ${eval:"$pppUp"} \3gi\${eval:"$pppS"}\p0m\
+
+</command-display>
+
+<!-- insert the contents of the im_comtrend.py file into the tool section below -->
+<tool:im_comtrend.py>
+#!/usr/local/imdc/core/python/bin/imdc -OO
+# The line above is required to run as an IMDC plugin
+
+# im_comtrend.py - Intermapper probe for Comtrend DSL modems
+#
+# Scrape web interface of a Comtrend DSL modem to return its SNR values,
+# and other important operational characteristics.
+# Tested with Comtrend AR-5381U
+#
+# See the full documentation at: https://github.com/richb-hanover/IMProbe-Comtrend
+#
+# Demonstrates a detailed Command-line probe, using the IMDC Python interpreter,
+# as well as the formatting available for a Status Window.
+#
+# ---------------------------------------------
+# Copyright (c) 2017 - Rich Brown, Blueberry Hill Software, http://blueberryhillsoftware.com
+# MIT License - See LICENSE file for the full statement
+
+import os
+import sys
+import getopt
+import urllib2
+import base64
+import re
+import socket
+import time
+from datetime import datetime, timedelta, date
+
+'''
+retrievePage() - get page from modem, handle errors
+'''
+def retrievePage(adrs, page, user, password):
+    request = urllib2.Request('http://%s/%s' % (adrs,page))
+    base64string = base64.b64encode('%s:%s' % (user, password))
+    request.add_header("Authorization", "Basic %s" % base64string)
+    try:
+        result = urllib2.urlopen(request, timeout=3)
+    except urllib2.URLError, e:
+        # For Python 2.7
+        # raise MyException("There was an error: %r" % e)
+        print "\{ } No response"  # No response - timed out
+        sys.exit(4)  # return "Down" exit status
+    return result.read()
+
+'''
+scanForValues - scan the lines and return down and upstream values from the named line
+'''
+def scanForValues(name, lines):
+    data = [elem for elem in lines if name in elem ]
+    line = data[0]                     # get the first line with "name"
+#    print "Line: %s" % (line)
+    regex = re.compile(r'\d+')
+    p = regex.findall(line)             # isolate numbers ("0.1 dB 119 156" => ['0', '1', '119', '156'])
+#    print "Return: %s" % (p[-2])
+    return p[-2:]
+
+'''
+scanForTimes - scan the page and return the modem's uptime; the DSL uptime, and the pppoe uptime as strings
+'''
+def scanForTimes(page):
+    lines = page.split('</td>')                                 # split on </td> elements
+    data = [elem for elem in lines if '<td>' in elem]           # only keep lines with <td>
+    result = []
+    for str in data:
+        # format the string to d, h, m, s
+        s = str.replace('\n','')                                # trim off new lines
+        s = re.sub(r'.*<td>', '', s)                            # trim off junk
+        s = s.replace(" days:", "d, ")                          # format to d, h, m, s values
+        s = s.replace(" hours:","h, ")
+        s = s.replace(" mins:","m, ")
+        s = s.replace(" secs","s")
+        s = '%-19s' % s                                         # force into fixed width field
+        result.append(s)
+
+        # compute time of outage
+        regex = re.compile(r'\d+')
+        p = regex.findall(s)                            # isolate numbers ("1d, 2h, 3m, 4s" => ['1', '2', '3', '4'])
+        timeVals = ["0","0","0","0"]
+        timeVals.extend(p)                              # Prepend four zero values in case nothing's there
+        hrs = int(timeVals[-4])*24+int(timeVals[-3])    # Days (4th from last) + Hours (third from last)
+        mins = (hrs * 60) + int(timeVals[-2])           # Add minutes (second from last)
+        secs = (mins * 60) + int(timeVals[-1])          # and seconds (last)
+        # compute time of outage
+        outage = datetime.now() - timedelta(**{'seconds': secs})
+        since = "(Since %s)" % outage.strftime("%d %b %H:%M:%S")
+        result.append(since)
+    return result[0:6]                                          # return times & "since" values
+
+'''
+Main Routine - parse arguments, get data from modem, format the results
+'''
+try:
+    searchString = ""
+    opts, args = getopt.getopt(sys.argv[1:], "")
+except getopt.GetoptError, err:
+    searchString = "getopt error %d" % (err)
+
+address = args[0]
+# print "Address: %s" % (address)
+
+if len(args) == 3:                          # if user & password args are on command line
+    user = args[1]                          # (supplied when testing)
+    password = args[2]
+else:
+    #                                       # Read the stdin file which contains the search String
+    f = sys.stdin                           # open stdin
+    credentials = f.readline().strip()      # get the line & remove leading & trailing whitespace
+    # print "credentials: %s" % (credentials)
+    #
+    userpw = credentials.split(" ")
+    user = userpw[0]
+    password = userpw[1]
+
+# Retrieve SNR, Power, Attenuation values
+page = retrievePage(address, "admin/statsadsl.html", user, password)
+lines = page.split('</tr>')  # split on new <tr> elements
+dSNR, uSNR = scanForValues("SNR", lines)
+dAtten, uAtten = scanForValues("Attenuation", lines)
+dPower, uPower = scanForValues("Output Power", lines)
+
+# Retrieve uptime values
+# page = retrievePage(address, "showuptime.html", user, password)
+# times = scanForTimes(page)                 # scan off the Uptime, DSL uptime, pppoe uptime
+
+retstring = ""
+retcode=0                               # probe (system) exit code
+
+# Format the response for display in the Status Window
+print "\{ $dSNR := %s, $uSNR := %s, $dAtten := %s, $uAtten := %s, $dPower := %s, $uPower := %s  }" \
+      % (dSNR, uSNR, dAtten, uAtten, dPower, uPower )
+sys.exit(retcode)
+
+</tool>
