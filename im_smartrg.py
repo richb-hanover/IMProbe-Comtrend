@@ -1,68 +1,3 @@
-<!--
-Command-line Probe (com.blueberryhillsoftware.comtrend.txt)
-Copyright (c) Blueberry Hill Software, LLC.
-Connect to a Comtrend DSL modem and scrape the SNR values
-Tested on Comtrend AR-5381u
--->
-
-<header>
-  type          =  "cmd-line"
-  package       =  "com.blueberryhillsoftware"
-  probe_name    =  "smartrg"
-  human_name    =  "SmartRG DSL Stats"
-  version       =  "1.1"
-  address_type  =  "IP"
-  display_name  =  "Miscellaneous/SmartRG DSL Stats"
-</header>
-
-<description>
-\GB\Smart DSL Stats\p\
-
-Retrieve SNR, Power, and Attenuation values, plus uptimes from a Comtrend DSL modem.
-
-Full source available: \u4\https://github.com/richb-hanover/IMProbe-Comtrend\p0\
-
-Created by Rich Brown, \u4=http://blueberryhillsoftware.com\Blueberry Hill Software LLC \p0\, an Intermapper consultant
-</description>
-
-<parameters>
-    User        =   "admin  "
-    Password    =   "admin"      # really!
-</parameters>
-
-<command-line>
--- 'path' forces the InterMapper Settings:Tools directory if empty
--- 'cmd' invokes the probe code, $numericParam passed "on the command line"
--- 'args' are appended to cmd when invoking the probe
--- 'input' is passed on stdin (avoids displaying info on cmd line, e.g., in top)
-   path     =   ""
-   cmd      =   "${PYTHON} im_comtrend.py"
-   arg      =   "${address}"
-   input    =   "${User} ${Password}"
-</command-line>
-
-<command-exit>
--- These match the exit codes used by Nagios plugins
-  down:  ${EXIT_CODE}=4
-  critical:  ${EXIT_CODE}=3
-  alarm:  ${EXIT_CODE}=2
-  warn:  ${EXIT_CODE}=1
-  okay:  ${EXIT_CODE}=0
-</command-exit>
-
-<command-display>
-\b5\ Comtrend      SNR    Power   Attenuation\p0\
-  Downstream:  ${chartable: ##.# : $dSNR/10}   ${chartable: ##.# : $dPower/10}    ${chartable: ##.# : $dAtten/10}
-    Upstream:  ${chartable: ##.# : $uSNR/10}   ${chartable: ##.# : $uPower/10}    ${chartable: ##.# : $uAtten/10}
-
-Modem Uptime: ${eval:"$mdmUp"} \3gi\${eval:"$mdmS"}\p0m\
-  DSL Uptime: ${eval:"$dslUp"} \3gi\${eval:"$dslS"}\p0m\
-PPPoE Uptime: ${eval:"$pppUp"} \3gi\${eval:"$pppS"}\p0m\
-
-</command-display>
-
-<!-- insert the contents of the im_comtrend.py file into the tool section below -->
-<tool:im_comtrend.py>
 #!/usr/local/imdc/core/python/bin/imdc -OO
 # The line above is required to run as an IMDC plugin
 
@@ -194,5 +129,3 @@ retcode=0                               # probe (system) exit code
 print "\{ $dSNR := %s, $uSNR := %s, $dAtten := %s, $uAtten := %s, $dPower := %s, $uPower := %s  }" \
       % (dSNR, uSNR, dAtten, uAtten, dPower, uPower )
 sys.exit(retcode)
-
-</tool>
