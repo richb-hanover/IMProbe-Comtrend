@@ -1,11 +1,11 @@
 #!/usr/local/imdc/core/python/bin/imdc -OO
 # The line above is required to run as an IMDC plugin
 
-# im_comtrend.py - Intermapper probe for Comtrend DSL modems
+# im_smartrg.py - Intermapper probe for SmartRG 555 DSL modems
 #
-# Scrape web interface of a Comtrend DSL modem to return its SNR values,
+# Scrape web interface of a SmartRG 555 DSL modem to return its SNR values,
 # and other important operational characteristics.
-# Tested with Comtrend AR-5381U
+# Tested with SmartRG 555
 #
 # See the full documentation at: https://github.com/richb-hanover/IMProbe-Comtrend
 #
@@ -13,7 +13,7 @@
 # as well as the formatting available for a Status Window.
 #
 # ---------------------------------------------
-# Copyright (c) 2017 - Rich Brown, Blueberry Hill Software, http://blueberryhillsoftware.com
+# Copyright (c) 2017-2018 - Rich Brown, Blueberry Hill Software, http://blueberryhillsoftware.com
 # MIT License - See LICENSE file for the full statement
 
 import os
@@ -27,6 +27,13 @@ import time
 from datetime import datetime, timedelta, date
 
 '''
+pluginError - return indicated error response from the IMDC plugin
+'''
+def pluginError(errMsg):
+    print "\{ } %s" % (errMsg)  # don't return anything except the errMsg as the probe's response
+    sys.exit(4)  # return "Down" exit status
+
+'''
 retrievePage() - get page from modem, handle errors
 '''
 def retrievePage(adrs, page, user, password):
@@ -38,20 +45,31 @@ def retrievePage(adrs, page, user, password):
     except urllib2.URLError, e:
         # For Python 2.7
         # raise MyException("There was an error: %r" % e)
-        print "\{ } No response"  # No response - timed out
-        sys.exit(4)  # return "Down" exit status
+        pluginError("No response")
     return result.read()
+
+'''
+index_containing_substring - scan the list for the first element that contains the substring
+   https://stackoverflow.com/questions/2170900/get-first-list-index-containing-sub-string
+'''
+def index_containing_substring(the_list, substring):
+    for i, s in enumerate(the_list):
+        if substring in s:
+              return i
+    return -1
 
 '''
 scanForValues - scan the lines and return down and upstream values from the named line
 '''
 def scanForValues(name, lines):
-    data = [elem for elem in lines if name in elem ]
-    line = data[0]                     # get the first line with "name"
+    # data = [elem for elem in lines if name in elem ]
+    # line = data[0]                     # get the first line with "name"
+    ix = index_containing_substring(lines, name)
+    line = lines[ix]
 #    print "Line: %s" % (line)
     regex = re.compile(r'\d+')
     p = regex.findall(line)             # isolate numbers ("0.1 dB 119 156" => ['0', '1', '119', '156'])
-    print "Name: %s is %s" % (name, p[-2])
+    # print "Name: %s is %s" % (name, p[-2])
     return p[-2:]
 
 '''
@@ -87,6 +105,20 @@ def scanForTimes(page):
     return result[0:6]                                          # return times & "since" values
 
 '''
+parseStats - parse the stats from the page at address/path
+    Returns list of up/down SNR, Attenuation, and Power
+'''
+def parseStats(address, path, user, password):
+    page = retrievePage(address, path, user, password)
+    lines = page.split('</tr>')  # split on new <tr> elements
+    lines = list(filter(lambda x: '<tr>' in x, lines))
+    dSNR, uSNR = scanForValues(">SNR Margin", lines)
+    dAtten, uAtten = scanForValues(">Attenuation", lines)
+    dPower, uPower = scanForValues(">Output Power", lines)
+    return [dSNR, uSNR, dAtten, uAtten, dPower, uPower]
+
+
+'''
 Main Routine - parse arguments, get data from modem, format the results
 '''
 try:
@@ -112,11 +144,8 @@ else:
     password = userpw[1]
 
 # Retrieve SNR, Power, Attenuation values
-page = retrievePage(address, "admin/statsadsl.html", user, password)
-lines = page.split('</tr>')  # split on new <tr> elements
-dSNR, uSNR = scanForValues("SNR", lines)
-dAtten, uAtten = scanForValues("Attenuation", lines)
-dPower, uPower = scanForValues("Output Power", lines)
+dSNR0, uSNR0, dAtten0, uAtten0, dPower0, uPower0 = parseStats(address, "admin/statsadsl.cgi?bondingLineNum=0", user, password)
+dSNR1, uSNR1, dAtten1, uAtten1, dPower1, uPower1 = parseStats(address, "admin/statsadsl.cgi?bondingLineNum=1", user, password)
 
 # Retrieve uptime values
 # page = retrievePage(address, "showuptime.html", user, password)
@@ -126,6 +155,7 @@ retstring = ""
 retcode=0                               # probe (system) exit code
 
 # Format the response for display in the Status Window
-print "\{ $dSNR := %s, $uSNR := %s, $dAtten := %s, $uAtten := %s, $dPower := %s, $uPower := %s  }" \
-      % (dSNR, uSNR, dAtten, uAtten, dPower, uPower )
+print "\{ $dSNR0 := %s, $uSNR0 := %s, $dAtten0 := %s, $uAtten0 := %s, $dPower0 := %s, $uPower0 := %s, "  \
+      "   $dSNR1 := %s, $uSNR1 := %s, $dAtten1 := %s, $uAtten1 := %s, $dPower1 := %s, $uPower1 := %s  }" \
+          % (dSNR0, uSNR0, dAtten0, uAtten0, dPower0, uPower0, dSNR1, uSNR1, dAtten1, uAtten1, dPower1, uPower1 )
 sys.exit(retcode)
