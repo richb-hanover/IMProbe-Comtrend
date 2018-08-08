@@ -111,11 +111,12 @@ parseStats - parse the stats from the page at address/path
 def parseStats(address, path, user, password):
     page = retrievePage(address, path, user, password)
     lines = page.split('</tr>')  # split on new <tr> elements
-    lines = list(filter(lambda x: '<tr>' in x, lines))
+    # lines = list(filter(lambda x: '<tr>' in x, lines))
     dSNR, uSNR = scanForValues(">SNR Margin", lines)
     dAtten, uAtten = scanForValues(">Attenuation", lines)
     dPower, uPower = scanForValues(">Output Power", lines)
-    return [dSNR, uSNR, dAtten, uAtten, dPower, uPower]
+    dAttRate, uAttRate = scanForValues("Attainable Rate", lines)
+    return [ dSNR, uSNR, dAtten, uAtten, dPower, uPower, dAttRate, uAttRate ]
 
 
 '''
@@ -144,8 +145,8 @@ else:
     password = userpw[1]
 
 # Retrieve SNR, Power, Attenuation values
-dSNR0, uSNR0, dAtten0, uAtten0, dPower0, uPower0 = parseStats(address, "admin/statsadsl.cgi?bondingLineNum=0", user, password)
-dSNR1, uSNR1, dAtten1, uAtten1, dPower1, uPower1 = parseStats(address, "admin/statsadsl.cgi?bondingLineNum=1", user, password)
+dSNR0, uSNR0, dAtten0, uAtten0, dPower0, uPower0, dAttRate0, uAttRate0 = parseStats(address, "admin/statsadsl.cgi?bondingLineNum=0", user, password)
+dSNR1, uSNR1, dAtten1, uAtten1, dPower1, uPower1, dAttRate1, uAttRate1 = parseStats(address, "admin/statsadsl.cgi?bondingLineNum=1", user, password)
 
 # Retrieve uptime values
 # page = retrievePage(address, "showuptime.html", user, password)
@@ -155,7 +156,11 @@ retstring = ""
 retcode=0                               # probe (system) exit code
 
 # Format the response for display in the Status Window
-print "\{ $dSNR0 := %s, $uSNR0 := %s, $dAtten0 := %s, $uAtten0 := %s, $dPower0 := %s, $uPower0 := %s, "  \
-      "   $dSNR1 := %s, $uSNR1 := %s, $dAtten1 := %s, $uAtten1 := %s, $dPower1 := %s, $uPower1 := %s  }" \
-          % (dSNR0, uSNR0, dAtten0, uAtten0, dPower0, uPower0, dSNR1, uSNR1, dAtten1, uAtten1, dPower1, uPower1 )
+print "\{ $dSNR0 := %s, $uSNR0 := %s, $dAtten0 := %s, $uAtten0 := %s, $dPower0 := %s, $uPower0 := %s, $dAttRate0 := %s, $uAttRate0 := %s,"  \
+      "   $dSNR1 := %s, $uSNR1 := %s, $dAtten1 := %s, $uAtten1 := %s, $dPower1 := %s, $uPower1 := %s, $dAttRate1 := %s, $uAttRate1 := %s  }" \
+          % (dSNR0, uSNR0, dAtten0, uAtten0, dPower0, uPower0, dAttRate0, uAttRate0, dSNR1, uSNR1, dAtten1, uAtten1, dPower1, uPower1, dAttRate1, uAttRate1 )
+
+# Test data
+# print "\{ $dSNR0 := 109, $uSNR0 := 117, $dAtten0 := 390, $uAtten0 := 173, $dPower0 := 178, $uPower0 := 63, $dAttRate0 := 14656, $uAttRate0 := 1255,   $dSNR1 := 66, $uSNR1 := 101, $dAtten1 := 400, $uAtten1 := 175, $dPower1 := 180, $uPower1 := 70, $dAttRate1 := 11816, $uAttRate1 := 1211  }"
+
 sys.exit(retcode)
