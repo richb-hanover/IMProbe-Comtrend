@@ -16,19 +16,21 @@
 # Copyright (c) 2017-2018 - Rich Brown, Blueberry Hill Software, http://blueberryhillsoftware.com
 # MIT License - See LICENSE file for the full statement
 
-import os
+# import os
 import sys
 import getopt
 import urllib2
 import base64
 import re
-import socket
-import time
-from datetime import datetime, timedelta, date
+# import socket
+# import time
+from datetime import datetime, timedelta
 
 '''
-pluginError - return indicated error response from the IMDC plugin
+pluginExit - return indicated response from the IMDC plugin
 '''
+
+
 def pluginExit(values, errMsg, exitCode):
     print "\{ %s } %s" % (values, errMsg)  # don't return anything except the errMsg as the probe's response
     sys.exit(exitCode)  # return "Down" exit status
@@ -36,22 +38,27 @@ def pluginExit(values, errMsg, exitCode):
 '''
 retrievePage() - get page from modem, handle errors
 '''
+
+
 def retrievePage(adrs, page, user, password):
-    request = urllib2.Request('http://%s/%s' % (adrs,page))
+    request = urllib2.Request('http://%s/%s' % (adrs, page))
     base64string = base64.b64encode('%s:%s' % (user, password))
     request.add_header("Authorization", "Basic %s" % base64string)
     try:
         result = urllib2.urlopen(request, timeout=3)
+        return result.read()
+
     except urllib2.URLError, e:
         # For Python 2.7
         # raise MyException("There was an error: %r" % e)
         pluginExit("", "No response", 4) # No values, Reason of "No response", exit code of 4 (down)
-    return result.read()
 
 '''
 index_containing_substring - scan the list for the first element that contains the substring
    https://stackoverflow.com/questions/2170900/get-first-list-index-containing-sub-string
 '''
+
+
 def index_containing_substring(the_list, substring):
     for i, s in enumerate(the_list):
         if substring in s:
@@ -61,6 +68,8 @@ def index_containing_substring(the_list, substring):
 '''
 scanForValues - scan the lines and return down and upstream values from the named line
 '''
+
+
 def scanForValues(name, lines):
     # data = [elem for elem in lines if name in elem ]
     # line = data[0]                     # get the first line with "name"
@@ -75,17 +84,39 @@ def scanForValues(name, lines):
 '''
 scanForUpTime - scan for "Synchronized time and return time value
 '''
+
+
 def scanForUpTime(name, lines):
     ix = index_containing_substring(lines, name)
     line = lines[ix]
     regex = re.compile(r'\d+')
     p = regex.findall(line)
-    val = ":".join(p[-4:])
-    return val
+    time = ":".join(p[-4:])
+    secs = computeSeconds(time)
+    since = 'yesterday'
+    return [ time, secs, since ]
+
+'''
+computeSeconds - given string in form of \d+ sep \d+ sep \d+ sep \d+ that represents d, h, m, s,
+    return number of seconds
+'''
+
+
+def computeSeconds(s):
+    regex = re.compile(r'\d+')
+    p = regex.findall(s)  # isolate numbers ("1d, 2h, 3m, 4s" => ['1', '2', '3', '4'])
+    timeVals = ["0", "0", "0", "0"]
+    timeVals.extend(p)  # Prepend four zero values in case nothing's there
+    hrs = int(timeVals[-4]) * 24 + int(timeVals[-3])  # Days (4th from last) + Hours (third from last)
+    mins = (hrs * 60) + int(timeVals[-2])  # Add minutes (second from last)
+    secs = (mins * 60) + int(timeVals[-1])  # and seconds (last)
+    return secs
 
 '''
 scanForTimes - scan the page and return the modem's uptime; the DSL uptime, and the pppoe uptime as strings
 '''
+
+
 def scanForTimes(page):
     lines = page.split('</td>')                                 # split on </td> elements
     data = [elem for elem in lines if '<td>' in elem]           # only keep lines with <td>
@@ -102,14 +133,7 @@ def scanForTimes(page):
         result.append(s)
 
         # compute time of outage
-        regex = re.compile(r'\d+')
-        p = regex.findall(s)                            # isolate numbers ("1d, 2h, 3m, 4s" => ['1', '2', '3', '4'])
-        timeVals = ["0","0","0","0"]
-        timeVals.extend(p)                              # Prepend four zero values in case nothing's there
-        hrs = int(timeVals[-4])*24+int(timeVals[-3])    # Days (4th from last) + Hours (third from last)
-        mins = (hrs * 60) + int(timeVals[-2])           # Add minutes (second from last)
-        secs = (mins * 60) + int(timeVals[-1])          # and seconds (last)
-        # compute time of outage
+        secs = computeSeconds(s)
         outage = datetime.now() - timedelta(**{'seconds': secs})
         since = "(Since %s)" % outage.strftime("%d %b %H:%M:%S")
         result.append(since)
@@ -119,6 +143,8 @@ def scanForTimes(page):
 parseStats - parse the stats from the page at address/path
     Returns list of up/down SNR, Attenuation, and Power
 '''
+
+
 def parseStats(address, path, user, password):
     page = retrievePage(address, path, user, password)
     lines = page.split('<tr>')  # split on new <tr> elements
@@ -127,13 +153,15 @@ def parseStats(address, path, user, password):
     dAtten, uAtten = scanForValues(">Attenuation", lines)
     dPower, uPower = scanForValues(">Output Power", lines)
     dAttRate, uAttRate = scanForValues("Attainable Rate", lines)
-    upTime = scanForUpTime(">Synchronized Time:", lines)
-    return [ dSNR, uSNR, dAtten, uAtten, dPower, uPower, dAttRate, uAttRate, upTime ]
+    upTime, upSecs, upSince = scanForUpTime(">Synchronized Time:", lines)
+    return [ dSNR, uSNR, dAtten, uAtten, dPower, uPower, dAttRate, uAttRate, upTime, upSecs, upSince ]
 
 
 '''
 Main Routine - parse arguments, get data from modem, format the results
 '''
+
+
 try:
     searchString = ""
     opts, args = getopt.getopt(sys.argv[1:], "")
@@ -157,22 +185,22 @@ else:
     password = userpw[1]
 
 # Retrieve SNR, Power, Attenuation values
-dSNR0, uSNR0, dAtten0, uAtten0, dPower0, uPower0, dAttRate0, uAttRate0, upTime0 = parseStats(address, "admin/statsadsl.cgi?bondingLineNum=0", user, password)
-dSNR1, uSNR1, dAtten1, uAtten1, dPower1, uPower1, dAttRate1, uAttRate1, upTime1 = parseStats(address, "admin/statsadsl.cgi?bondingLineNum=1", user, password)
+dSNR0, uSNR0, dAtten0, uAtten0, dPower0, uPower0, dAttRate0, uAttRate0, upTime0, upSecs0, upSince0 = parseStats(address, "admin/statsadsl.cgi?bondingLineNum=0", user, password)
+dSNR1, uSNR1, dAtten1, uAtten1, dPower1, uPower1, dAttRate1, uAttRate1, upTime1, upSecs1, upSince1 = parseStats(address, "admin/statsadsl.cgi?bondingLineNum=1", user, password)
 
 # Retrieve uptime values
 # page = retrievePage(address, "showuptime.html", user, password)
 # times = scanForTimes(page)                 # scan off the Uptime, DSL uptime, pppoe uptime
 
-retstring = ""
+reason = ""
 retcode=0                               # probe (system) exit code
 
 # Format the response for display in the Status Window
-print "\{ $dSNR0 := %s, $uSNR0 := %s, $dAtten0 := %s, $uAtten0 := %s, $dPower0 := %s, $uPower0 := %s, $dAttRate0 := %s, $uAttRate0 := %s, $upTime0 := %s, "  \
-      "   $dSNR1 := %s, $uSNR1 := %s, $dAtten1 := %s, $uAtten1 := %s, $dPower1 := %s, $uPower1 := %s, $dAttRate1 := %s, $uAttRate1 := %s, $upTime1 := %s }" \
-          % (dSNR0, uSNR0, dAtten0, uAtten0, dPower0, uPower0, dAttRate0, uAttRate0, upTime0, dSNR1, uSNR1, dAtten1, uAtten1, dPower1, uPower1, dAttRate1, uAttRate1, upTime1 )
+retstring = "\{ $dSNR0 := %s, $uSNR0 := %s, $dAtten0 := %s, $uAtten0 := %s, $dPower0 := %s, $uPower0 := %s, " \
+            "      $dAttRate0 := %s, $uAttRate0 := %s, $upTime0 := %s, $upSecs0 := %s, $upSince0 := %s,"  \
+            "   $dSNR1 := %s, $uSNR1 := %s, $dAtten1 := %s, $uAtten1 := %s, $dPower1 := %s, $uPower1 := %s, " \
+            "      $dAttRate1 := %s, $uAttRate1 := %s, $upTime1 := %s, $upSecs1 := %s, $upSince1 := %s }" \
+          % (dSNR0, uSNR0, dAtten0, uAtten0, dPower0, uPower0, dAttRate0, uAttRate0, upTime0, upSecs0, upSince0,
+             dSNR1, uSNR1, dAtten1, uAtten1, dPower1, uPower1, dAttRate1, uAttRate1, upTime1, upSecs1, upSince1)
 
-# Test data
-# print "\{ $dSNR0 := 109, $uSNR0 := 117, $dAtten0 := 390, $uAtten0 := 173, $dPower0 := 178, $uPower0 := 63, $dAttRate0 := 14656, $uAttRate0 := 1255,   $dSNR1 := 66, $uSNR1 := 101, $dAtten1 := 400, $uAtten1 := 175, $dPower1 := 180, $uPower1 := 70, $dAttRate1 := 11816, $uAttRate1 := 1211  }"
-
-sys.exit(retcode)
+pluginExit(retstring, reason, retcode)

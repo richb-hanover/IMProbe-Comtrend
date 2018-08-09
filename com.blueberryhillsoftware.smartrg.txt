@@ -56,12 +56,12 @@ Created by Rich Brown, \u4=http://blueberryhillsoftware.com\Blueberry Hill Softw
 \bm\ Line0         SNR   Power Atten   Bitrate\p\
 \bm4\  Downstream:\p\  ${chartable: ##.# : $dSNR0/10}   ${chartable: ##.# : $dPower0/10}  ${chartable: ##.# : $dAtten0/10}    ${scalable10: ##.## : $dAttRate0*1000}bps\m0\
 \bm4\    Upstream:\p\  ${chartable: ##.# : $uSNR0/10}   ${chartable: ##.# : $uPower0/10}  ${chartable: ##.# : $uAtten0/10}    ${scalable10: ##.## : $uAttRate0*1000}bps\m0\
-\bm4\      Uptime:\p\ $upTime0
+\bm4\      Uptime:\p\ $upTime0, $secs0, $since0
 
 \bm\ Line1         SNR   Power Atten   Att. Bitrate\p\
 \bm4\  Downstream:\p\  ${chartable: ##.# : $dSNR1/10}   ${chartable: ##.# : $dPower1/10}  ${chartable: ##.# : $dAtten1/10}    ${scalable10: ##.## : $dAttRate1*1000}bps\m0\
 \bm4\    Upstream:\p\  ${chartable: ##.# : $uSNR1/10}   ${chartable: ##.# : $uPower1/10}  ${chartable: ##.# : $uAtten1/10}    ${scalable10: ##.## : $uAttRate1*1000}bps\m0\
-\bm4\      Uptime:\p\ $upTime1
+\bm4\      Uptime:\p\ $upTime1, $secs1, $since1
 
 </command-display>
 
