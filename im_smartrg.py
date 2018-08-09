@@ -82,6 +82,17 @@ def scanForValues(name, lines):
     return p[-2:]
 
 '''
+computeUpTime - given a number of seconds before now, determine when that interval began
+'''
+
+
+def computeUpTime(secs):
+    outage = datetime.now() - timedelta(**{'seconds': secs})
+    since = "%s" % outage.strftime("%d %b %H:%M:%S")
+    return since
+
+
+'''
 scanForUpTime - scan for "Synchronized time and return time value
 '''
 
@@ -93,7 +104,7 @@ def scanForUpTime(name, lines):
     p = regex.findall(line)
     time = ":".join(p[-4:])
     secs = computeSeconds(time)
-    since = 'yesterday'
+    since = computeUpTime(secs)
     return [ time, secs, since ]
 
 '''
@@ -134,6 +145,7 @@ def scanForTimes(page):
 
         # compute time of outage
         secs = computeSeconds(s)
+
         outage = datetime.now() - timedelta(**{'seconds': secs})
         since = "(Since %s)" % outage.strftime("%d %b %H:%M:%S")
         result.append(since)
