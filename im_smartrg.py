@@ -32,7 +32,7 @@ pluginExit - return indicated response from the IMDC plugin
 
 
 def pluginExit(values, errMsg, exitCode):
-    print "\{ %s } %s" % (values, errMsg)  # don't return anything except the errMsg as the probe's response
+    print "\{ %s }%s" % (values, errMsg)  # don't return anything except the errMsg as the probe's response
     sys.exit(exitCode)  # return "Down" exit status
 
 '''
@@ -196,11 +196,14 @@ reason = ""
 retcode=0                               # probe (system) exit code
 
 # Format the response for display in the Status Window
-retstring = "\{ $dSNR0 := %s, $uSNR0 := %s, $dAtten0 := %s, $uAtten0 := %s, $dPower0 := %s, $uPower0 := %s, " \
-            "      $dAttRate0 := %s, $uAttRate0 := %s, $upTime0 := %s, $upSecs0 := %s, $upSince0 := %s,"  \
+
+print "\{ $dSNR0 := %s, $uSNR0 := %s, $dAtten0 := %s, $uAtten0 := %s, $dPower0 := %s, $uPower0 := %s, " \
+            "      $dAttRate0 := %s, $uAttRate0 := %s, $upTime0 := '%s', $upSecs0 := %s, $upSince0 := '%s', "  \
             "   $dSNR1 := %s, $uSNR1 := %s, $dAtten1 := %s, $uAtten1 := %s, $dPower1 := %s, $uPower1 := %s, " \
-            "      $dAttRate1 := %s, $uAttRate1 := %s, $upTime1 := %s, $upSecs1 := %s, $upSince1 := %s }" \
+            "      $dAttRate1 := %s, $uAttRate1 := %s, $upTime1 := '%s', $upSecs1 := %s, $upSince1 := '%s' }" \
           % (dSNR0, uSNR0, dAtten0, uAtten0, dPower0, uPower0, dAttRate0, uAttRate0, upTime0, upSecs0, upSince0,
              dSNR1, uSNR1, dAtten1, uAtten1, dPower1, uPower1, dAttRate1, uAttRate1, upTime1, upSecs1, upSince1)
 
-pluginExit(retstring, reason, retcode)
+sys.exit(0)
+
+# pluginExit(retstring, reason, retcode)
