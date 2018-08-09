@@ -29,9 +29,9 @@ from datetime import datetime, timedelta, date
 '''
 pluginError - return indicated error response from the IMDC plugin
 '''
-def pluginError(errMsg):
-    print "\{ } %s" % (errMsg)  # don't return anything except the errMsg as the probe's response
-    sys.exit(4)  # return "Down" exit status
+def pluginExit(values, errMsg, exitCode):
+    print "\{ %s } %s" % (values, errMsg)  # don't return anything except the errMsg as the probe's response
+    sys.exit(exitCode)  # return "Down" exit status
 
 '''
 retrievePage() - get page from modem, handle errors
@@ -45,7 +45,7 @@ def retrievePage(adrs, page, user, password):
     except urllib2.URLError, e:
         # For Python 2.7
         # raise MyException("There was an error: %r" % e)
-        pluginError("No response")
+        pluginExit("", "No response", 4) # No values, Reason of "No response", exit code of 4 (down)
     return result.read()
 
 '''
@@ -71,6 +71,17 @@ def scanForValues(name, lines):
     p = regex.findall(line)             # isolate numbers ("0.1 dB 119 156" => ['0', '1', '119', '156'])
     # print "Name: %s is %s" % (name, p[-2])
     return p[-2:]
+
+'''
+scanForUpTime - scan for "Synchronized time and return time value
+'''
+def scanForUpTime(name, lines):
+    ix = index_containing_substring(lines, name)
+    line = lines[ix]
+    regex = re.compile(r'\d+')
+    p = regex.findall(line)
+    val = ":".join(p[-4:])
+    return val
 
 '''
 scanForTimes - scan the page and return the modem's uptime; the DSL uptime, and the pppoe uptime as strings
@@ -110,13 +121,14 @@ parseStats - parse the stats from the page at address/path
 '''
 def parseStats(address, path, user, password):
     page = retrievePage(address, path, user, password)
-    lines = page.split('</tr>')  # split on new <tr> elements
+    lines = page.split('<tr>')  # split on new <tr> elements
     # lines = list(filter(lambda x: '<tr>' in x, lines))
     dSNR, uSNR = scanForValues(">SNR Margin", lines)
     dAtten, uAtten = scanForValues(">Attenuation", lines)
     dPower, uPower = scanForValues(">Output Power", lines)
     dAttRate, uAttRate = scanForValues("Attainable Rate", lines)
-    return [ dSNR, uSNR, dAtten, uAtten, dPower, uPower, dAttRate, uAttRate ]
+    upTime = scanForUpTime(">Synchronized Time:", lines)
+    return [ dSNR, uSNR, dAtten, uAtten, dPower, uPower, dAttRate, uAttRate, upTime ]
 
 
 '''
@@ -145,8 +157,8 @@ else:
     password = userpw[1]
 
 # Retrieve SNR, Power, Attenuation values
-dSNR0, uSNR0, dAtten0, uAtten0, dPower0, uPower0, dAttRate0, uAttRate0 = parseStats(address, "admin/statsadsl.cgi?bondingLineNum=0", user, password)
-dSNR1, uSNR1, dAtten1, uAtten1, dPower1, uPower1, dAttRate1, uAttRate1 = parseStats(address, "admin/statsadsl.cgi?bondingLineNum=1", user, password)
+dSNR0, uSNR0, dAtten0, uAtten0, dPower0, uPower0, dAttRate0, uAttRate0, upTime0 = parseStats(address, "admin/statsadsl.cgi?bondingLineNum=0", user, password)
+dSNR1, uSNR1, dAtten1, uAtten1, dPower1, uPower1, dAttRate1, uAttRate1, upTime1 = parseStats(address, "admin/statsadsl.cgi?bondingLineNum=1", user, password)
 
 # Retrieve uptime values
 # page = retrievePage(address, "showuptime.html", user, password)
@@ -156,9 +168,9 @@ retstring = ""
 retcode=0                               # probe (system) exit code
 
 # Format the response for display in the Status Window
-print "\{ $dSNR0 := %s, $uSNR0 := %s, $dAtten0 := %s, $uAtten0 := %s, $dPower0 := %s, $uPower0 := %s, $dAttRate0 := %s, $uAttRate0 := %s,"  \
-      "   $dSNR1 := %s, $uSNR1 := %s, $dAtten1 := %s, $uAtten1 := %s, $dPower1 := %s, $uPower1 := %s, $dAttRate1 := %s, $uAttRate1 := %s  }" \
-          % (dSNR0, uSNR0, dAtten0, uAtten0, dPower0, uPower0, dAttRate0, uAttRate0, dSNR1, uSNR1, dAtten1, uAtten1, dPower1, uPower1, dAttRate1, uAttRate1 )
+print "\{ $dSNR0 := %s, $uSNR0 := %s, $dAtten0 := %s, $uAtten0 := %s, $dPower0 := %s, $uPower0 := %s, $dAttRate0 := %s, $uAttRate0 := %s, $upTime0 := %s, "  \
+      "   $dSNR1 := %s, $uSNR1 := %s, $dAtten1 := %s, $uAtten1 := %s, $dPower1 := %s, $uPower1 := %s, $dAttRate1 := %s, $uAttRate1 := %s, $upTime1 := %s }" \
+          % (dSNR0, uSNR0, dAtten0, uAtten0, dPower0, uPower0, dAttRate0, uAttRate0, upTime0, dSNR1, uSNR1, dAtten1, uAtten1, dPower1, uPower1, dAttRate1, uAttRate1, upTime1 )
 
 # Test data
 # print "\{ $dSNR0 := 109, $uSNR0 := 117, $dAtten0 := 390, $uAtten0 := 173, $dPower0 := 178, $uPower0 := 63, $dAttRate0 := 14656, $uAttRate0 := 1255,   $dSNR1 := 66, $uSNR1 := 101, $dAtten1 := 400, $uAtten1 := 175, $dPower1 := 180, $uPower1 := 70, $dAttRate1 := 11816, $uAttRate1 := 1211  }"
