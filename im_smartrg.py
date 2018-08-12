@@ -41,6 +41,9 @@ retrievePage() - get page from modem, handle errors
 
 
 def retrievePage(adrs, page, user, password):
+
+    # Return test data during development
+    return open('/Users/richb/github/scrapecomtrend/RawData/statsadsl-smartRG.html', 'r').read()
     request = urllib2.Request('http://%s/%s' % (adrs, page))
     base64string = base64.b64encode('%s:%s' % (user, password))
     request.add_header("Authorization", "Basic %s" % base64string)
@@ -184,6 +187,7 @@ try:
     opts, args = getopt.getopt(sys.argv[1:], "")
 except getopt.GetoptError, err:
     searchString = "getopt error %d" % (err)
+    args = []
 
 address = args[0]
 # print "Address: %s" % (address)

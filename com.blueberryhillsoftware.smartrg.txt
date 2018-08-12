@@ -54,14 +54,14 @@ Created by Rich Brown, \u4=http://blueberryhillsoftware.com\Blueberry Hill Softw
 \b5\SmartRG DSL Information\p0\
 
 \bm\ Line0         SNR   Power Atten   Att. Bitrate\p\
-\bm4\  Downstream:\p\  ${chartable: ##.# : $dSNR0/10}   ${chartable: ##.# : $dPower0/10}  ${chartable: ##.# : $dAtten0/10}    ${scalable10: ##.## : $dAttRate0*1000}bps\m0\
-\bm4\    Upstream:\p\  ${chartable: ##.# : $uSNR0/10}   ${chartable: ##.# : $uPower0/10}  ${chartable: ##.# : $uAtten0/10}    ${scalable10: ##.## : $uAttRate0*1000}bps\m0\
-\bm4\      Uptime:\p\  Since $upSince0 ($upTime0, $upSecs0 seconds)
+\bm4\  Downstream:\p\  ${chartable: "%4.1f" : $dSNR0/10}   ${chartable: "%4.1f" : $dPower0/10}  ${chartable: "%4.1f" : $dAtten0/10}    ${scalable10: "%4.1f" : $dAttRate0*1000}bps\m0\
+\bm4\    Upstream:\p\  ${chartable: "%4.1f" : $uSNR0/10}   ${chartable: "%4.1f" : $uPower0/10}  ${chartable: "%4.1f" : $uAtten0/10}    ${scalable10: "%4.1f" : $uAttRate0*1000}bps\m0\
+\bm4\      Uptime:\p\  \0i\Since\p\ $upSince0 ($upTime0, $upSecs0 seconds)
 
 \bm\ Line1         SNR   Power Atten   Att. Bitrate\p\
-\bm4\  Downstream:\p\  ${chartable: ##.# : $dSNR1/10}   ${chartable: ##.# : $dPower1/10}  ${chartable: ##.# : $dAtten1/10}    ${scalable10: ##.## : $dAttRate1*1000}bps\m0\
-\bm4\    Upstream:\p\  ${chartable: ##.# : $uSNR1/10}   ${chartable: ##.# : $uPower1/10}  ${chartable: ##.# : $uAtten1/10}    ${scalable10: ##.## : $uAttRate1*1000}bps\m0\
-\bm4\      Uptime:\p\  Since $upSince1 ($upTime1, $upSecs1 seconds)
+\bm4\  Downstream:\p\  ${chartable: "%4.1f" : $dSNR1/10}   ${chartable: "%4.1f" : $dPower1/10}  ${chartable: "%4.1f" : $dAtten1/10}    ${scalable10: "%4.1f" : $dAttRate1*1000}bps\m0\
+\bm4\    Upstream:\p\  ${chartable: "%4.1f" : $uSNR1/10}   ${chartable: "%4.1f" : $uPower1/10}  ${chartable: "%4.1f" : $uAtten1/10}    ${scalable10: "%4.1f" : $uAttRate1*1000}bps\m0\
+\bm4\      Uptime:\p\  \0i\Since\p\ $upSince1 ($upTime1, $upSecs1 seconds)
 
 </command-display>
 
@@ -117,6 +117,9 @@ retrievePage() - get page from modem, handle errors
 
 
 def retrievePage(adrs, page, user, password):
+
+    # Return test data during development
+    return open('/Users/richb/github/scrapecomtrend/RawData/statsadsl-smartRG.html', 'r').read()
     request = urllib2.Request('http://%s/%s' % (adrs, page))
     base64string = base64.b64encode('%s:%s' % (user, password))
     request.add_header("Authorization", "Basic %s" % base64string)
@@ -260,6 +263,7 @@ try:
     opts, args = getopt.getopt(sys.argv[1:], "")
 except getopt.GetoptError, err:
     searchString = "getopt error %d" % (err)
+    args = []
 
 address = args[0]
 # print "Address: %s" % (address)
