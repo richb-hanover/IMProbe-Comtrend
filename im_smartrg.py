@@ -43,7 +43,7 @@ retrievePage() - get page from modem, handle errors
 def retrievePage(adrs, page, user, password):
 
     # Return test data during development
-    return open('/Users/richb/github/scrapecomtrend/RawData/statsadsl-smartRG.html', 'r').read()
+    # return open('/Users/richb/github/scrapecomtrend/RawData/statsadsl-smartRG.html', 'r').read()
     request = urllib2.Request('http://%s/%s' % (adrs, page))
     base64string = base64.b64encode('%s:%s' % (user, password))
     request.add_header("Authorization", "Basic %s" % base64string)
@@ -82,7 +82,9 @@ def scanForValues(name, lines):
     regex = re.compile(r'\d+')
     p = regex.findall(line)             # isolate numbers ("0.1 dB 119 156" => ['0', '1', '119', '156'])
     # print "Name: %s is %s" % (name, p[-2])
-    return p[-2:]
+    vals = ["0", "0", "0", "0"]
+    vals.extend(p)
+    return vals[-4:]
 
 '''
 computeUpTime - given a number of seconds before now, determine when that interval began
@@ -165,12 +167,13 @@ def parseStats(address, path, user, password):
     lines = page.split('<tr>')  # split on new <tr> elements
     try:
         # lines = list(filter(lambda x: '<tr>' in x, lines))
-        dSNR, uSNR = scanForValues(">SNR Margin", lines)
-        dAtten, uAtten = scanForValues(">Attenuation", lines)
-        dPower, uPower = scanForValues(">Output Power", lines)
-        dAttRate, uAttRate = scanForValues("Attainable Rate", lines)
+        x, y, dSNR, uSNR = scanForValues(">SNR Margin", lines)
+        x, y, dAtten, uAtten = scanForValues(">Attenuation", lines)
+        x, y, dPower, uPower = scanForValues(">Output Power", lines)
+        x, y, dAttRate, uAttRate = scanForValues("Attainable Rate", lines)
+        dActRate, uActRate, x, y = scanForValues(">Rate (", lines)
         upTime, upSecs, upSince = scanForUpTime(">Synchronized Time:", lines)
-        return [ dSNR, uSNR, dAtten, uAtten, dPower, uPower, dAttRate, uAttRate, upTime, upSecs, upSince ]
+        return [ dSNR, uSNR, dAtten, uAtten, dPower, uPower, dAttRate, uAttRate, dActRate, uActRate, upTime, upSecs, upSince ]
     except ValueError, e:
         pluginExit("", "ValueError: %s" % (e.message), 4)
     except NameError, e:
@@ -206,8 +209,8 @@ else:
     password = userpw[1]
 
 # Retrieve SNR, Power, Attenuation values
-dSNR0, uSNR0, dAtten0, uAtten0, dPower0, uPower0, dAttRate0, uAttRate0, upTime0, upSecs0, upSince0 = parseStats(address, "admin/statsadsl.cgi?bondingLineNum=0", user, password)
-dSNR1, uSNR1, dAtten1, uAtten1, dPower1, uPower1, dAttRate1, uAttRate1, upTime1, upSecs1, upSince1 = parseStats(address, "admin/statsadsl.cgi?bondingLineNum=1", user, password)
+dSNR0, uSNR0, dAtten0, uAtten0, dPower0, uPower0, dAttRate0, uAttRate0, dActRate0, uActRate0, upTime0, upSecs0, upSince0 = parseStats(address, "admin/statsadsl.cgi?bondingLineNum=0", user, password)
+dSNR1, uSNR1, dAtten1, uAtten1, dPower1, uPower1, dAttRate1, uAttRate1, dActRate1, uActRate1, upTime1, upSecs1, upSince1 = parseStats(address, "admin/statsadsl.cgi?bondingLineNum=1", user, password)
 
 # Retrieve uptime values
 # page = retrievePage(address, "showuptime.html", user, password)
@@ -220,11 +223,11 @@ try:
     # Format the response for display in the Status Window
 
     print "\{ $dSNR0 := %s, $uSNR0 := %s, $dAtten0 := %s, $uAtten0 := %s, $dPower0 := %s, $uPower0 := %s, " \
-                "      $dAttRate0 := %s, $uAttRate0 := %s, $upTime0 := '%s', $upSecs0 := %s, $upSince0 := '%s', "  \
-                "   $dSNR1 := %s, $uSNR1 := %s, $dAtten1 := %s, $uAtten1 := %s, $dPower1 := %s, $uPower1 := %s, " \
-                "      $dAttRate1 := %s, $uAttRate1 := %s, $upTime1 := '%s', $upSecs1 := %s, $upSince1 := '%s' }" \
-              % (dSNR0, uSNR0, dAtten0, uAtten0, dPower0, uPower0, dAttRate0, uAttRate0, upTime0, upSecs0, upSince0,
-                 dSNR1, uSNR1, dAtten1, uAtten1, dPower1, uPower1, dAttRate1, uAttRate1, upTime1, upSecs1, upSince1)
+                " $dAttRate0 := %s, $dActRate0 := %s, $uAttRate0 := %s, $uActRate0 := %s, $upTime0 := '%s', $upSecs0 := %s, $upSince0 := '%s', "  \
+                " $dSNR1 := %s, $uSNR1 := %s, $dAtten1 := %s, $uAtten1 := %s, $dPower1 := %s, $uPower1 := %s, " \
+                " $dAttRate1 := %s, $dActRate1 := %s, $uAttRate1 := %s, $uActRate1 := %s, $upTime1 := '%s', $upSecs1 := %s, $upSince1 := '%s' }" \
+              % (dSNR0, uSNR0, dAtten0, uAtten0, dPower0, uPower0, dAttRate0, dActRate0, uAttRate0, uActRate0, upTime0, upSecs0, upSince0,
+                 dSNR1, uSNR1, dAtten1, uAtten1, dPower1, uPower1, dAttRate1, dActRate1, uAttRate1, uActRate1, upTime1, upSecs1, upSince1)
 
     sys.exit(0)
 except NameError, e:
