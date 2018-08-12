@@ -123,7 +123,7 @@ def retrievePage(adrs, page, user, password):
         return result.read()
 
     except urllib2.HTTPError, e:
-        pluginExit("", "HTTP Error: %d %s" % (e.code, e.reason), 4)
+        pluginExit("", "HTTP Error: %d" % (e.code), 4)
     except urllib2.URLError, e:
         pluginExit("", "URL Error: %s"  % (e.reason), 4) # No values, Reason of "No response", exit code of 4 (down)
 
