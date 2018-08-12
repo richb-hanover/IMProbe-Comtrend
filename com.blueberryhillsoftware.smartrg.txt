@@ -53,16 +53,26 @@ Created by Rich Brown, \u4=http://blueberryhillsoftware.com\Blueberry Hill Softw
 <command-display>
 \b5\SmartRG DSL Information\p0\
 
-\bm\ Line0         SNR   Power Atten   Attainable & Actual Bitrate\p\
-\bm4\  Downstream:\p\  ${chartable: "%4.1f" : $dSNR0/10}   ${chartable: "%4.1f" : $dPower0/10}  ${chartable: "%4.1f" : $dAtten0/10}    ${scalable10: "%5.1f" : $dAttRate0*1000}bps   ${scalable10: "%5.1f" : $dActRate0*1000}bps\m0\
-\bm4\    Upstream:\p\  ${chartable: "%4.1f" : $uSNR0/10}   ${chartable: "%4.1f" : $uPower0/10}  ${chartable: "%4.1f" : $uAtten0/10}    ${scalable10: "%5.1f" : $uAttRate0*1000}bps   ${scalable10: "%5.1f" : $uActRate0*1000}bps\m0\
+\bm3\ Line0          SNR Power Atten Attainable & Actual Bitrate\p\
+\bm4\  Downstream:\p\  ${chartable: "%4.1f" : $dSNR0/10}  ${chartable: "%4.1f" : $dPower0/10}  ${chartable: "%4.1f" : $dAtten0/10}  ${scalable10: "%5.1f" : $dAttRate0*1000}bps  ${scalable10: "%5.1f" : $dActRate0*1000}bps\m0\
+\bm4\    Upstream:\p\  ${chartable: "%4.1f" : $uSNR0/10}  ${chartable: "%4.1f" : $uPower0/10}  ${chartable: "%4.1f" : $uAtten0/10}  ${scalable10: "%5.1f" : $uAttRate0*1000}bps  ${scalable10: "%5.1f" : $uActRate0*1000}bps\m0\
 \bm4\    Up since:\p\  $upSince0 ($upTime0, $upSecs0 seconds)
 
-\bm\ Line1         SNR   Power Atten   Attainable & Actual Bitrate\p\
-\bm4\  Downstream:\p\  ${chartable: "%4.1f" : $dSNR1/10}   ${chartable: "%4.1f" : $dPower1/10}  ${chartable: "%4.1f" : $dAtten1/10}    ${scalable10: "%5.1f" : $dAttRate1*1000}bps   ${scalable10: "%5.1f" : $dActRate1*1000}bps\m0\
-\bm4\    Upstream:\p\  ${chartable: "%4.1f" : $uSNR1/10}   ${chartable: "%4.1f" : $uPower1/10}  ${chartable: "%4.1f" : $uAtten1/10}    ${scalable10: "%5.1f" : $uAttRate1*1000}bps   ${scalable10: "%5.1f" : $uActRate1*1000}bps\m0\
+\bm3\ Line1          SNR Power Atten Attainable & Actual Bitrate\p\
+\bm4\  Downstream:\p\  ${chartable: "%4.1f" : $dSNR1/10}  ${chartable: "%4.1f" : $dPower1/10}  ${chartable: "%4.1f" : $dAtten1/10}  ${scalable10: "%5.1f" : $dAttRate1*1000}bps  ${scalable10: "%5.1f" : $dActRate1*1000}bps\m0\
+\bm4\    Upstream:\p\  ${chartable: "%4.1f" : $uSNR1/10}  ${chartable: "%4.1f" : $uPower1/10}  ${chartable: "%4.1f" : $uAtten1/10}  ${scalable10: "%5.1f" : $uAttRate1*1000}bps  ${scalable10: "%5.1f" : $uActRate1*1000}bps\m0\
 \bm4\    Up since:\p\  $upSince1 ($upTime1, $upSecs1 seconds)
+\p\
 
+\b\                Line 0           |          Line 1\p\
+\ib\          Down           Up      |   Down           Up\p\
+   SNR: ${chartable: "%6.1f" : $dSNR0/10}       ${chartable: "%6.1f" : $uSNR0/10}      | ${chartable: "%6.1f" : $dSNR1/10}       ${chartable: "%6.1f" : $uSNR1/10}
+ Power: ${chartable: "%6.1f" : $dPower0/10} dBm   ${chartable: "%6.1f" : $uPower0/10} dBm  | ${chartable: "%6.1f" : $dPower1/10} dBm   ${chartable: "%6.1f" : $uPower1/10} dBm
+ Atten: ${chartable: "%6.1f" : $dAtten0/10} dBm   ${chartable: "%6.1f" : $uAtten0/10} dBm  | ${chartable: "%6.1f" : $dAtten1/10} dBm   ${chartable: "%6.1f" : $uAtten1/10} dBm
+Attain: ${scalable10: "%6.1f" : $dAttRate0*1000}bps  ${scalable10: "%6.1f" : $uAttRate0*1000}bps | ${scalable10: "%6.1f" : $dAttRate1*1000}bps  ${scalable10: "%6.1f" : $uAttRate1*1000}bps
+Actual: ${scalable10: "%6.1f" : $dActRate0*1000}bps  ${scalable10: "%6.1f" : $uActRate0*1000}bps | ${scalable10: "%6.1f" : $dActRate1*1000}bps  ${scalable10: "%6.1f" : $uActRate1*1000}bps
+Uptime: ${eval:sprintf("%12s", $upTime0)}, ${chartable: "%6d" : $upSecs0} sec | ${eval:sprintf("%12s", $upTime1)}, ${chartable: "%6d" : $upSecs1} sec
+ Since:  ${eval:sprintf("%-23s", $upSince0)} |  ${eval:sprintf("%-24s", $upSince1)}
 \p\
 </command-display>
 
@@ -114,7 +124,7 @@ retrievePage() - get page from modem, handle errors
 def retrievePage(adrs, page, user, password):
 
     # Return test data during development
-    # return open('/Users/richb/github/scrapecomtrend/RawData/statsadsl-smartRG.html', 'r').read()
+    return open('/Users/richb/github/scrapecomtrend/RawData/statsadsl-smartRG.html', 'r').read()
     request = urllib2.Request('http://%s/%s' % (adrs, page))
     base64string = base64.b64encode('%s:%s' % (user, password))
     request.add_header("Authorization", "Basic %s" % base64string)
