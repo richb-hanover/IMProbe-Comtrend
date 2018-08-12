@@ -48,10 +48,10 @@ def retrievePage(adrs, page, user, password):
         result = urllib2.urlopen(request, timeout=3)
         return result.read()
 
+    except urllib2.HTTPError, e:
+        pluginExit("", "HTTP Error: %d %s" % (e.code, e.reason), 4)
     except urllib2.URLError, e:
-        # For Python 2.7
-        # raise MyException("There was an error: %r" % e)
-        pluginExit("", "No response", 4) # No values, Reason of "No response", exit code of 4 (down)
+        pluginExit("", "URL Error: %s"  % (e.reason), 4) # No values, Reason of "No response", exit code of 4 (down)
 
 '''
 index_containing_substring - scan the list for the first element that contains the substring
@@ -160,13 +160,18 @@ parseStats - parse the stats from the page at address/path
 def parseStats(address, path, user, password):
     page = retrievePage(address, path, user, password)
     lines = page.split('<tr>')  # split on new <tr> elements
-    # lines = list(filter(lambda x: '<tr>' in x, lines))
-    dSNR, uSNR = scanForValues(">SNR Margin", lines)
-    dAtten, uAtten = scanForValues(">Attenuation", lines)
-    dPower, uPower = scanForValues(">Output Power", lines)
-    dAttRate, uAttRate = scanForValues("Attainable Rate", lines)
-    upTime, upSecs, upSince = scanForUpTime(">Synchronized Time:", lines)
-    return [ dSNR, uSNR, dAtten, uAtten, dPower, uPower, dAttRate, uAttRate, upTime, upSecs, upSince ]
+    try:
+        # lines = list(filter(lambda x: '<tr>' in x, lines))
+        dSNR, uSNR = scanForValues(">SNR Margin", lines)
+        dAtten, uAtten = scanForValues(">Attenuation", lines)
+        dPower, uPower = scanForValues(">Output Power", lines)
+        dAttRate, uAttRate = scanForValues("Attainable Rate", lines)
+        upTime, upSecs, upSince = scanForUpTime(">Synchronized Time:", lines)
+        return [ dSNR, uSNR, dAtten, uAtten, dPower, uPower, dAttRate, uAttRate, upTime, upSecs, upSince ]
+    except ValueError, e:
+        pluginExit("", "ValueError: %s" % (e.message), 4)
+    except NameError, e:
+        pluginExit("", "NameError: %s" % (e.message), 4)
 
 
 '''
@@ -204,18 +209,20 @@ dSNR1, uSNR1, dAtten1, uAtten1, dPower1, uPower1, dAttRate1, uAttRate1, upTime1,
 # page = retrievePage(address, "showuptime.html", user, password)
 # times = scanForTimes(page)                 # scan off the Uptime, DSL uptime, pppoe uptime
 
-reason = ""
-retcode=0                               # probe (system) exit code
+try:
+    reason = ""
+    retcode=0                               # probe (system) exit code
 
-# Format the response for display in the Status Window
+    # Format the response for display in the Status Window
 
-print "\{ $dSNR0 := %s, $uSNR0 := %s, $dAtten0 := %s, $uAtten0 := %s, $dPower0 := %s, $uPower0 := %s, " \
-            "      $dAttRate0 := %s, $uAttRate0 := %s, $upTime0 := '%s', $upSecs0 := %s, $upSince0 := '%s', "  \
-            "   $dSNR1 := %s, $uSNR1 := %s, $dAtten1 := %s, $uAtten1 := %s, $dPower1 := %s, $uPower1 := %s, " \
-            "      $dAttRate1 := %s, $uAttRate1 := %s, $upTime1 := '%s', $upSecs1 := %s, $upSince1 := '%s' }" \
-          % (dSNR0, uSNR0, dAtten0, uAtten0, dPower0, uPower0, dAttRate0, uAttRate0, upTime0, upSecs0, upSince0,
-             dSNR1, uSNR1, dAtten1, uAtten1, dPower1, uPower1, dAttRate1, uAttRate1, upTime1, upSecs1, upSince1)
+    print "\{ $dSNR0 := %s, $uSNR0 := %s, $dAtten0 := %s, $uAtten0 := %s, $dPower0 := %s, $uPower0 := %s, " \
+                "      $dAttRate0 := %s, $uAttRate0 := %s, $upTime0 := '%s', $upSecs0 := %s, $upSince0 := '%s', "  \
+                "   $dSNR1 := %s, $uSNR1 := %s, $dAtten1 := %s, $uAtten1 := %s, $dPower1 := %s, $uPower1 := %s, " \
+                "      $dAttRate1 := %s, $uAttRate1 := %s, $upTime1 := '%s', $upSecs1 := %s, $upSince1 := '%s' }" \
+              % (dSNR0, uSNR0, dAtten0, uAtten0, dPower0, uPower0, dAttRate0, uAttRate0, upTime0, upSecs0, upSince0,
+                 dSNR1, uSNR1, dAtten1, uAtten1, dPower1, uPower1, dAttRate1, uAttRate1, upTime1, upSecs1, upSince1)
 
-sys.exit(0)
-
+    sys.exit(0)
+except NameError, e:
+    pluginExit("", "Name Error: %s" % (e.reason), 4)
 # pluginExit(retstring, reason, retcode)
