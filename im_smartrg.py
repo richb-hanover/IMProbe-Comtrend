@@ -78,10 +78,8 @@ def scanForValues(name, lines):
     # line = data[0]                     # get the first line with "name"
     ix = index_containing_substring(lines, name)
     line = lines[ix]
-#    print "Line: %s" % (line)
     regex = re.compile(r'\d+')
     p = regex.findall(line)             # isolate numbers ("0.1 dB 119 156" => ['0', '1', '119', '156'])
-    # print "Name: %s is %s" % (name, p[-2])
     vals = ["0", "0", "0", "0"]
     vals.extend(p)
     return vals[-4:]
@@ -107,54 +105,22 @@ def scanForUpTime(name, lines):
     line = lines[ix]
     regex = re.compile(r'\d+')
     p = regex.findall(line)
-    time = ":".join(p[-4:])
-    secs = computeSeconds(time)
+    time = "%sd%sh%sm%ss" % (p[-4],p[-3],p[-2],p[-1])
+    secs = computeSeconds(p[-4:])
     since = computeUpTime(secs)
     return [ time, secs, since ]
 
 '''
-computeSeconds - given string in form of \d+ sep \d+ sep \d+ sep \d+ that represents d, h, m, s,
+computeSeconds - given a list of numbers that represents d, h, m, s,
     return number of seconds
 '''
 
 
-def computeSeconds(s):
-    regex = re.compile(r'\d+')
-    p = regex.findall(s)  # isolate numbers ("1d, 2h, 3m, 4s" => ['1', '2', '3', '4'])
-    timeVals = ["0", "0", "0", "0"]
-    timeVals.extend(p)  # Prepend four zero values in case nothing's there
+def computeSeconds(timeVals):
     hrs = int(timeVals[-4]) * 24 + int(timeVals[-3])  # Days (4th from last) + Hours (third from last)
     mins = (hrs * 60) + int(timeVals[-2])  # Add minutes (second from last)
     secs = (mins * 60) + int(timeVals[-1])  # and seconds (last)
     return secs
-
-'''
-scanForTimes - scan the page and return the modem's uptime; the DSL uptime, and the pppoe uptime as strings
-'''
-
-
-def scanForTimes(page):
-    lines = page.split('</td>')                                 # split on </td> elements
-    data = [elem for elem in lines if '<td>' in elem]           # only keep lines with <td>
-    result = []
-    for str in data:
-        # format the string to d, h, m, s
-        s = str.replace('\n','')                                # trim off new lines
-        s = re.sub(r'.*<td>', '', s)                            # trim off junk
-        s = s.replace(" days:", "d, ")                          # format to d, h, m, s values
-        s = s.replace(" hours:","h, ")
-        s = s.replace(" mins:","m, ")
-        s = s.replace(" secs","s")
-        s = '%-19s' % s                                         # force into fixed width field
-        result.append(s)
-
-        # compute time of outage
-        secs = computeSeconds(s)
-
-        outage = datetime.now() - timedelta(**{'seconds': secs})
-        since = "(Since %s)" % outage.strftime("%d %b %H:%M:%S")
-        result.append(since)
-    return result[0:6]                                          # return times & "since" values
 
 '''
 parseStats - parse the stats from the page at address/path
@@ -193,7 +159,6 @@ except getopt.GetoptError, err:
     args = []
 
 address = args[0]
-# print "Address: %s" % (address)
 
 if len(args) == 3:                          # if user & password args are on command line
     user = args[1]                          # (supplied when testing)
@@ -201,9 +166,8 @@ if len(args) == 3:                          # if user & password args are on com
 else:
     #                                       # Read the stdin file which contains the search String
     f = sys.stdin                           # open stdin
-    credentials = f.readline().strip()      # get the line & remove leading & trailing whitespace
-    # print "credentials: %s" % (credentials)
-    #
+    firstline = f.readline()
+    credentials = " ".join(firstline.split())  # remove leading/trailing/duplicate whitespace
     userpw = credentials.split(" ")
     user = userpw[0]
     password = userpw[1]
@@ -212,24 +176,20 @@ else:
 dSNR0, uSNR0, dAtten0, uAtten0, dPower0, uPower0, dAttRate0, uAttRate0, dActRate0, uActRate0, upTime0, upSecs0, upSince0 = parseStats(address, "admin/statsadsl.cgi?bondingLineNum=0", user, password)
 dSNR1, uSNR1, dAtten1, uAtten1, dPower1, uPower1, dAttRate1, uAttRate1, dActRate1, uActRate1, upTime1, upSecs1, upSince1 = parseStats(address, "admin/statsadsl.cgi?bondingLineNum=1", user, password)
 
-# Retrieve uptime values
-# page = retrievePage(address, "showuptime.html", user, password)
-# times = scanForTimes(page)                 # scan off the Uptime, DSL uptime, pppoe uptime
-
 try:
     reason = ""
     retcode=0                               # probe (system) exit code
 
     # Format the response for display in the Status Window
 
-    print "\{ $dSNR0 := %s, $uSNR0 := %s, $dAtten0 := %s, $uAtten0 := %s, $dPower0 := %s, $uPower0 := %s, " \
+    retvalues = " $dSNR0 := %s, $uSNR0 := %s, $dAtten0 := %s, $uAtten0 := %s, $dPower0 := %s, $uPower0 := %s, " \
                 " $dAttRate0 := %s, $dActRate0 := %s, $uAttRate0 := %s, $uActRate0 := %s, $upTime0 := '%s', $upSecs0 := %s, $upSince0 := '%s', "  \
                 " $dSNR1 := %s, $uSNR1 := %s, $dAtten1 := %s, $uAtten1 := %s, $dPower1 := %s, $uPower1 := %s, " \
-                " $dAttRate1 := %s, $dActRate1 := %s, $uAttRate1 := %s, $uActRate1 := %s, $upTime1 := '%s', $upSecs1 := %s, $upSince1 := '%s' }" \
+                " $dAttRate1 := %s, $dActRate1 := %s, $uAttRate1 := %s, $uActRate1 := %s, $upTime1 := '%s', $upSecs1 := %s, $upSince1 := '%s' " \
               % (dSNR0, uSNR0, dAtten0, uAtten0, dPower0, uPower0, dAttRate0, dActRate0, uAttRate0, uActRate0, upTime0, upSecs0, upSince0,
                  dSNR1, uSNR1, dAtten1, uAtten1, dPower1, uPower1, dAttRate1, dActRate1, uAttRate1, uActRate1, upTime1, upSecs1, upSince1)
 
-    sys.exit(0)
+    pluginExit(retvalues, reason, retcode)
 except NameError, e:
     pluginExit("", "Name Error: %s" % (e.reason), 4)
 # pluginExit(retstring, reason, retcode)
