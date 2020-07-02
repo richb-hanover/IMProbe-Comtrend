@@ -1,0 +1,267 @@
+<!--
+Command-line Probe (com.blueberryhillsoftware.smartrg.txt)
+Copyright (c) Blueberry Hill Software, LLC.
+Connect to a SmartRG dual bonded DSL modem and scrape the SNR values
+Tested on SmartRG 555ac
+-->
+
+<header>
+  type          =  "cmd-line"
+  package       =  "com.blueberryhillsoftware"
+  probe_name    =  "smartrg"
+  human_name    =  "SmartRG DSL Stats"
+  version       =  "1.1"
+  address_type  =  "IP"
+  display_name  =  "Miscellaneous/SmartRG DSL Stats"
+</header>
+
+<description>
+\GB\SmartRG DSL Stats\p\
+
+Retrieve SNR, Power, and Attenuation values, plus uptimes from a SmartRG DSL modem.
+
+Full source available: \u4\https://github.com/richb-hanover/IMProbe-Comtrend\p0\
+
+Created by Rich Brown, \u4=http://blueberryhillsoftware.com\Blueberry Hill Software LLC \p0\, an Intermapper consultant
+</description>
+
+<parameters>
+    User        =   "admin  "
+    Password    =   "admin"
+</parameters>
+
+<command-line>
+-- 'path' forces the InterMapper Settings:Tools directory if empty
+-- 'cmd' invokes the probe code, $numericParam passed "on the command line"
+-- 'args' are appended to cmd when invoking the probe
+-- 'input' is passed on stdin (avoids displaying info on cmd line, e.g., in top)
+   path     =   ""
+   cmd      =   "${PYTHON} im_smartrg.py"
+   arg      =   "${address}"
+   input    =   "${User} ${Password}"
+</command-line>
+
+<command-exit>
+-- These match the exit codes used by Nagios plugins
+  down:  ${EXIT_CODE}=4
+  critical:  ${EXIT_CODE}=3
+  alarm:  ${EXIT_CODE}=2
+  warn:  ${EXIT_CODE}=1
+  okay:  ${EXIT_CODE}=0
+</command-exit>
+
+<command-display>
+\b5\SmartRG DSL Information\p0\
+\b\          ====== Line 0 =======  |   ====== Line 1 =======\p\
+\ib\          Down           Up      |   Down           Up\p\
+   SNR: ${chartable: "%6.1f" : $dSNR0/10}       ${chartable: "%6.1f" : $uSNR0/10}      | ${chartable: "%6.1f" : $dSNR1/10}       ${chartable: "%6.1f" : $uSNR1/10}
+ Atten: ${chartable: "%6.1f" : $dAtten0/10} dBm   ${chartable: "%6.1f" : $uAtten0/10} dBm  | ${chartable: "%6.1f" : $dAtten1/10} dBm   ${chartable: "%6.1f" : $uAtten1/10} dBm
+ Power: ${chartable: "%6.1f" : $dPower0/10} dBm   ${chartable: "%6.1f" : $uPower0/10} dBm  | ${chartable: "%6.1f" : $dPower1/10} dBm   ${chartable: "%6.1f" : $uPower1/10} dBm
+Attain: ${scalable10: "%6.1f" : $dAttRate0*1000}bps  ${scalable10: "%6.1f" : $uAttRate0*1000}bps | ${scalable10: "%6.1f" : $dAttRate1*1000}bps  ${scalable10: "%6.1f" : $uAttRate1*1000}bps
+Actual: ${scalable10: "%6.1f" : $dActRate0*1000}bps  ${scalable10: "%6.1f" : $uActRate0*1000}bps | ${scalable10: "%6.1f" : $dActRate1*1000}bps  ${scalable10: "%6.1f" : $uActRate1*1000}bps
+ Since:   ${eval:sprintf("%-22s", $upSince0)} |   ${eval:sprintf("%-22s", $upSince1)}
+Uptime: ${eval:sprintf("%12s", $upTime0)}, ${chartable: "%6d" : $upSecs0} sec | ${eval:sprintf("%12s", $upTime1)}, ${chartable: "%6d" : $upSecs1} sec
+\p\
+
+</command-display>
+
+<!-- insert the contents of the im_smartrg.py file into the tool section below -->
+<tool:im_smartrg.py>
+
+#!/usr/local/imdc/core/python/bin/imdc -OO
+# The line above is required to run as an IMDC plugin
+
+# im_smartrg.py - Intermapper probe for SmartRG 555 DSL modems
+#
+# Scrape web interface of a SmartRG 555 DSL modem to return its SNR values,
+# and other important operational characteristics.
+# Tested with SmartRG 555
+#
+# See the full documentation at: https://github.com/richb-hanover/IMProbe-Comtrend
+#
+# Demonstrates a detailed Command-line probe, using the IMDC Python interpreter,
+# as well as the formatting available for a Status Window.
+#
+# ---------------------------------------------
+# Copyright (c) 2017-2018 - Rich Brown, Blueberry Hill Software, http://blueberryhillsoftware.com
+# MIT License - See LICENSE file for the full statement
+
+# import os
+import sys
+import getopt
+import urllib2
+import base64
+import re
+# import socket
+# import time
+from datetime import datetime, timedelta
+
+'''
+pluginExit - return indicated response from the IMDC plugin
+'''
+
+
+def pluginExit(values, errMsg, exitCode):
+    print "\{ %s }%s" % (values, errMsg)  # don't return anything except the errMsg as the probe's response
+    sys.exit(exitCode)  # return "Down" exit status
+
+'''
+retrievePage() - get page from modem, handle errors
+'''
+
+
+def retrievePage(adrs, page, user, password):
+
+    # Return test data during development
+    # return open('/Users/richb/github/scrapecomtrend/RawData/statsadsl-smartRG.html', 'r').read()
+    request = urllib2.Request('http://%s/%s' % (adrs, page))
+    base64string = base64.b64encode('%s:%s' % (user, password))
+    request.add_header("Authorization", "Basic %s" % base64string)
+    try:
+        result = urllib2.urlopen(request, timeout=3)
+        return result.read()
+
+    except urllib2.HTTPError, e:
+        pluginExit("", "HTTP Error: %d" % (e.code), 4)
+    except urllib2.URLError, e:
+        pluginExit("", "URL Error: %s"  % (e.reason), 4) # No values, Reason of "No response", exit code of 4 (down)
+
+'''
+index_containing_substring - scan the list for the first element that contains the substring
+   https://stackoverflow.com/questions/2170900/get-first-list-index-containing-sub-string
+'''
+
+
+def index_containing_substring(the_list, substring):
+    for i, s in enumerate(the_list):
+        if substring in s:
+              return i
+    return -1
+
+'''
+scanForValues - scan the lines and return down and upstream values from the named line
+'''
+
+
+def scanForValues(name, lines):
+    # data = [elem for elem in lines if name in elem ]
+    # line = data[0]                     # get the first line with "name"
+    ix = index_containing_substring(lines, name)
+    line = lines[ix]
+    regex = re.compile(r'\d+')
+    p = regex.findall(line)             # isolate numbers ("0.1 dB 119 156" => ['0', '1', '119', '156'])
+    vals = ["0", "0", "0", "0"]
+    vals.extend(p)
+    return vals[-4:]
+
+'''
+computeUpTime - given a number of seconds before now, determine when that interval began
+'''
+
+
+def computeUpTime(secs):
+    outage = datetime.now() - timedelta(**{'seconds': secs})
+    since = "%s" % outage.strftime("%d %b %H:%M:%S")
+    return since
+
+
+'''
+scanForUpTime - scan for "Synchronized time and return time value
+'''
+
+
+def scanForUpTime(name, lines):
+    ix = index_containing_substring(lines, name)
+    line = lines[ix]
+    regex = re.compile(r'\d+')
+    p = regex.findall(line)
+    time = "%sd%sh%sm%ss" % (p[-4],p[-3],p[-2],p[-1])
+    secs = computeSeconds(p[-4:])
+    since = computeUpTime(secs)
+    return [ time, secs, since ]
+
+'''
+computeSeconds - given a list of numbers that represents d, h, m, s,
+    return number of seconds
+'''
+
+
+def computeSeconds(timeVals):
+    hrs = int(timeVals[-4]) * 24 + int(timeVals[-3])  # Days (4th from last) + Hours (third from last)
+    mins = (hrs * 60) + int(timeVals[-2])  # Add minutes (second from last)
+    secs = (mins * 60) + int(timeVals[-1])  # and seconds (last)
+    return secs
+
+'''
+parseStats - parse the stats from the page at address/path
+    Returns list of up/down SNR, Attenuation, and Power
+'''
+
+
+def parseStats(address, path, user, password):
+    page = retrievePage(address, path, user, password)
+    lines = page.split('<tr>')  # split on new <tr> elements
+    try:
+        # lines = list(filter(lambda x: '<tr>' in x, lines))
+        x, y, dSNR, uSNR = scanForValues(">SNR Margin", lines)
+        x, y, dAtten, uAtten = scanForValues(">Attenuation", lines)
+        x, y, dPower, uPower = scanForValues(">Output Power", lines)
+        x, y, dAttRate, uAttRate = scanForValues("Attainable Rate", lines)
+        dActRate, uActRate, x, y = scanForValues(">Rate (", lines)
+        upTime, upSecs, upSince = scanForUpTime(">Synchronized Time:", lines)
+        return [ dSNR, uSNR, dAtten, uAtten, dPower, uPower, dAttRate, uAttRate, dActRate, uActRate, upTime, upSecs, upSince ]
+    except ValueError, e:
+        pluginExit("", "ValueError: %s" % (e.message), 4)
+    except NameError, e:
+        pluginExit("", "NameError: %s" % (e.message), 4)
+
+
+'''
+Main Routine - parse arguments, get data from modem, format the results
+'''
+
+
+try:
+    searchString = ""
+    opts, args = getopt.getopt(sys.argv[1:], "")
+except getopt.GetoptError, err:
+    searchString = "getopt error %d" % (err)
+    args = []
+
+address = args[0]
+
+if len(args) == 3:                          # if user & password args are on command line
+    user = args[1]                          # (supplied when testing)
+    password = args[2]
+else:
+    #                                       # Read the stdin file which contains the search String
+    f = sys.stdin                           # open stdin
+    firstline = f.readline()
+    credentials = " ".join(firstline.split())  # remove leading/trailing/duplicate whitespace
+    userpw = credentials.split(" ")
+    user = userpw[0]
+    password = userpw[1]
+
+# Retrieve SNR, Power, Attenuation values
+dSNR0, uSNR0, dAtten0, uAtten0, dPower0, uPower0, dAttRate0, uAttRate0, dActRate0, uActRate0, upTime0, upSecs0, upSince0 = parseStats(address, "admin/statsadsl.cgi?bondingLineNum=0", user, password)
+dSNR1, uSNR1, dAtten1, uAtten1, dPower1, uPower1, dAttRate1, uAttRate1, dActRate1, uActRate1, upTime1, upSecs1, upSince1 = parseStats(address, "admin/statsadsl.cgi?bondingLineNum=1", user, password)
+
+try:
+    reason = ""
+    retcode=0                               # probe (system) exit code
+
+    # Format the response for display in the Status Window
+
+    retvalues = " $dSNR0 := %s, $uSNR0 := %s, $dAtten0 := %s, $uAtten0 := %s, $dPower0 := %s, $uPower0 := %s, " \
+                " $dAttRate0 := %s, $dActRate0 := %s, $uAttRate0 := %s, $uActRate0 := %s, $upTime0 := '%s', $upSecs0 := %s, $upSince0 := '%s', "  \
+                " $dSNR1 := %s, $uSNR1 := %s, $dAtten1 := %s, $uAtten1 := %s, $dPower1 := %s, $uPower1 := %s, " \
+                " $dAttRate1 := %s, $dActRate1 := %s, $uAttRate1 := %s, $uActRate1 := %s, $upTime1 := '%s', $upSecs1 := %s, $upSince1 := '%s' " \
+              % (dSNR0, uSNR0, dAtten0, uAtten0, dPower0, uPower0, dAttRate0, dActRate0, uAttRate0, uActRate0, upTime0, upSecs0, upSince0,
+                 dSNR1, uSNR1, dAtten1, uAtten1, dPower1, uPower1, dAttRate1, dActRate1, uAttRate1, uActRate1, upTime1, upSecs1, upSince1)
+
+    pluginExit(retvalues, reason, retcode)
+except NameError, e:
+    pluginExit("", "Name Error: %s" % (e.reason), 4)
+# pluginExit(retstring, reason, retcode)
+
+</tool>

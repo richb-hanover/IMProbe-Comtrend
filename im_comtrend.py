@@ -115,6 +115,7 @@ lines = page.split('</tr>')  # split on new <tr> elements
 dSNR, uSNR = scanForValues("SNR", lines)
 dAtten, uAtten = scanForValues("Attenuation", lines)
 dPower, uPower = scanForValues("Output Power", lines)
+dRate, uRate = scanForValues("Attainable Rate", lines)
 
 # Retrieve uptime values
 page = retrievePage(address, "showuptime.html", user, password)
@@ -124,6 +125,6 @@ retstring = ""
 retcode=0                               # probe (system) exit code
 
 # Format the response for display in the Status Window 
-print "\{ $dSNR := %s, $uSNR := %s, $dAtten := %s, $uAtten := %s, $dPower := %s, $uPower := %s, $mdmUp := '%s', $mdmS := '%s', $dslUp := '%s', $dslS := '%s', $pppUp := '%s', $pppS := '%s' }" \
-      % (dSNR, uSNR, dAtten, uAtten, dPower, uPower, times[0], times[1], times[2], times[3], times[4], times[5] )
+print "\{ $dSNR := %s, $uSNR := %s, $dAtten := %s, $uAtten := %s, $dPower := %s, $uPower := %s, $dRate := %s, $uRate := %s,  $mdmUp := '%s', $mdmS := '%s', $dslUp := '%s', $dslS := '%s', $pppUp := '%s', $pppS := '%s' }" \
+      % (dSNR, uSNR, dAtten, uAtten, dPower, uPower, dRate, uRate, times[0], times[1], times[2], times[3], times[4], times[5] )
 sys.exit(retcode)
